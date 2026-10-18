@@ -695,7 +695,7 @@ class AiopsDiagnosticService:
         no_sop_matched: bool,
         available_tools: Sequence[str],
     ) -> tuple[list[JsonDict], str]:
-        generic_plan = [self._generic_search_log_step(query)]
+        generic_plan = [self._generic_search_log_step(query, alert)]
         prompt = (
             "Return JSON only with a `steps` array. Each step has `id`, `tool`, `arguments`, and "
             "`purpose`. Plan a bounded AIOps investigation using only these tools: "
@@ -711,34 +711,51 @@ class AiopsDiagnosticService:
         search_log_steps = [step for step in plan if step.get("tool") == "SearchLog"]
         if not search_log_steps:
             return generic_plan, "generic"
-        return [self._normalized_search_log_step(search_log_steps[0], query)], (
+        return [self._normalized_search_log_step(search_log_steps[0], query, alert)], (
             "SOP-backed" if sop_hits else "generic"
         )
 
-    def _generic_search_log_step(self, query: str) -> JsonDict:
+    def _generic_search_log_step(self, query: str, alert: JsonDict) -> JsonDict:
         now_ms = int(_now().timestamp() * 1000)
+        alert_labels = _json_dict(alert.get("labels"))
+        service = str(alert_labels.get("service") or alert.get("service") or "").strip()
+        cls_query = f"service:{service}" if service else "*"
+        starts_at_str = str(alert.get("startsAt") or "").strip()
+        try:
+            starts_at_ms = int(
+                datetime.fromisoformat(starts_at_str.replace("Z", "+00:00")).timestamp() * 1000
+            )
+            from_ms = starts_at_ms - 10 * 60 * 1000
+            to_ms = starts_at_ms + 5 * 60 * 1000
+        except (ValueError, AttributeError):
+            from_ms = now_ms - 86_400_000
+            to_ms = now_ms
         return {
             "id": "search-cls-logs",
             "tool": "SearchLog",
             "arguments": {
                 "Region": self._cls_region,
                 "TopicId": self._cls_topic_id,
-                "From": now_ms - 86_400_000,
-                "To": now_ms,
-                "Query": "*",
-                "Limit": 20,
+                "From": from_ms,
+                "To": to_ms,
+                "Query": cls_query,
+                "Limit": 50,
             },
             "purpose": f"Gather real CLS evidence relevant to: {query}",
         }
 
-    def _normalized_search_log_step(self, step: JsonDict, query: str) -> JsonDict:
+    def _normalized_search_log_step(self, step: JsonDict, query: str, alert: JsonDict) -> JsonDict:
         """Keep model planning bounded to an executable real CLS search step."""
-        generic_step = self._generic_search_log_step(query)
+        generic_step = self._generic_search_log_step(query, alert)
         model_arguments = _json_dict(step.get("arguments"))
         limit_value = model_arguments.get("Limit")
+        model_query = str(model_arguments.get("Query") or "").strip()
         arguments = _json_dict(generic_step["arguments"])
         if isinstance(limit_value, int) and 1 <= limit_value <= 100:
             arguments["Limit"] = limit_value
+        base_query = str(arguments["Query"])
+        if model_query and model_query != "*" and base_query != "*":
+            arguments["Query"] = f"{base_query} AND {model_query}"
         return {
             "id": str(step.get("id") or generic_step["id"]),
             "tool": "SearchLog",

@@ -646,6 +646,100 @@ def _is_failed_tool_event(event: dict[str, object]) -> bool:
     )
 
 
+@pytest.mark.asyncio
+async def test_diagnostic_query_uses_alert_service_and_time_window(
+    migrated_database_url: str,
+) -> None:
+    engine = create_memory_engine(migrated_database_url)
+    try:
+        repositories = create_sqlite_memory_repositories(create_memory_session_factory(engine))
+        task = await repositories.diagnostics.create_task(
+            owner_user_id="user-a",
+            task_id="diagnostic-query-scoping",
+            status="accepted",
+            query="Investigate payment timeout",
+            input_payload={
+                "alert": {
+                    "labels": {"service": "payment-service", "severity": "critical"},
+                    "startsAt": "2026-07-11T06:00:00Z",
+                }
+            },
+        )
+        mcp = FakeMcpClient()
+        service = AiopsDiagnosticService(
+            repositories=repositories,
+            llm_provider=cast(LlmProvider, FakeLlmProvider()),
+            retrieval_tool=KnowledgeRetrievalTool(
+                embedding_model=FakeEmbeddingModel(),
+                vector_store=FakeVectorStore([]),
+                rerank_model=FakeRerankModel(),
+            ),
+            mcp_client=cast(LocalMcpClient, mcp),
+            cls_region="ap-guangzhou",
+            cls_topic_id="topic-a",
+            case_persistor=DiagnosisCasePersistor(
+                repositories=repositories,
+                index_task_scheduler=FakeCaseIndexScheduler(),
+            ),
+        )
+
+        [_ async for _ in service.stream(task=task, accessible_knowledge_base_ids=("kb_user-a",))]
+    finally:
+        await engine.dispose()
+
+    assert len(mcp.calls) >= 1
+    search_log_call = next(call for call in mcp.calls if call[0] == "SearchLog")
+    arguments = search_log_call[1]
+    assert arguments["Query"] == "service:payment-service"
+    alert_starts_at_ms = 1783749600000
+    assert arguments["From"] == alert_starts_at_ms - 10 * 60 * 1000
+    assert arguments["To"] == alert_starts_at_ms + 5 * 60 * 1000
+    assert arguments["Limit"] == 50
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_query_falls_back_when_alert_has_no_service(
+    migrated_database_url: str,
+) -> None:
+    engine = create_memory_engine(migrated_database_url)
+    try:
+        repositories = create_sqlite_memory_repositories(create_memory_session_factory(engine))
+        task = await repositories.diagnostics.create_task(
+            owner_user_id="user-a",
+            task_id="diagnostic-query-fallback",
+            status="accepted",
+            query="Investigate unknown alert",
+            input_payload={"alert": {"severity": "critical"}},
+        )
+        mcp = FakeMcpClient()
+        service = AiopsDiagnosticService(
+            repositories=repositories,
+            llm_provider=cast(LlmProvider, FakeLlmProvider()),
+            retrieval_tool=KnowledgeRetrievalTool(
+                embedding_model=FakeEmbeddingModel(),
+                vector_store=FakeVectorStore([]),
+                rerank_model=FakeRerankModel(),
+            ),
+            mcp_client=cast(LocalMcpClient, mcp),
+            cls_region="ap-guangzhou",
+            cls_topic_id="topic-a",
+            case_persistor=DiagnosisCasePersistor(
+                repositories=repositories,
+                index_task_scheduler=FakeCaseIndexScheduler(),
+            ),
+        )
+
+        [_ async for _ in service.stream(task=task, accessible_knowledge_base_ids=("kb_user-a",))]
+    finally:
+        await engine.dispose()
+
+    assert len(mcp.calls) >= 1
+    search_log_call = next(call for call in mcp.calls if call[0] == "SearchLog")
+    arguments = search_log_call[1]
+    assert arguments["Query"] == "*"
+    assert arguments["Limit"] == 50
+
+
 @pytest.fixture
 def migrated_database_url(tmp_path: Path) -> str:
     database_path = tmp_path / "aiops-diagnostics.sqlite3"
