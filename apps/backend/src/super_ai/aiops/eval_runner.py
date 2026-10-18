@@ -19,7 +19,7 @@ from typing import Any
 
 from super_ai.aiops.eval_fixtures import EVAL_CASES, EvalCase
 
-_RESULT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "eval_results")
+_RESULT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "eval_results")
 _RESULT_FILE = os.path.join(_RESULT_DIR, "layer1_service_time_window.json")
 
 _TIME_WINDOW_BEFORE = timedelta(minutes=10)
