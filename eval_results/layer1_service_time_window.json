@@ -11,24 +11,11 @@
     "overall_recall_relevant": 0.8095,
     "overall_recall_root_cause": 0.6667,
     "overall_precision": 0.6881,
-    "total_cases": 15,
-    "d1_recall_relevant": 1.0,
-    "d1_recall_root_cause": 1.0,
-    "d1_precision": 0.6667,
-    "d1_cases": 6,
-    "d2_recall_relevant": 1.0,
-    "d2_recall_root_cause": 1.0,
-    "d2_precision": 0.6429,
-    "d2_cases": 4,
-    "d3_recall_relevant": 0.4286,
-    "d3_recall_root_cause": 0.0,
-    "d3_precision": 0.75,
-    "d3_cases": 5
+    "total_cases": 15
   },
   "per_case": [
     {
       "case_id": "eval-d1-order-db-pool",
-      "difficulty": 1,
       "alert_service": "order-service",
       "root_cause_service": "order-service",
       "retrieved_log_ids": [
@@ -52,7 +39,6 @@
     },
     {
       "case_id": "eval-d1-payment-gateway-timeout",
-      "difficulty": 1,
       "alert_service": "payment-service",
       "root_cause_service": "payment-service",
       "retrieved_log_ids": [
@@ -76,7 +62,6 @@
     },
     {
       "case_id": "eval-d1-auth-jwk-refresh",
-      "difficulty": 1,
       "alert_service": "auth-service",
       "root_cause_service": "auth-service",
       "retrieved_log_ids": [
@@ -100,7 +85,6 @@
     },
     {
       "case_id": "eval-d1-kafka-consumer-lag",
-      "difficulty": 1,
       "alert_service": "order-event-consumer",
       "root_cause_service": "order-event-consumer",
       "retrieved_log_ids": [
@@ -124,7 +108,6 @@
     },
     {
       "case_id": "eval-d1-es-search-timeout",
-      "difficulty": 1,
       "alert_service": "product-search-service",
       "root_cause_service": "product-search-service",
       "retrieved_log_ids": [
@@ -148,7 +131,6 @@
     },
     {
       "case_id": "eval-d1-fulfillment-503",
-      "difficulty": 1,
       "alert_service": "fulfillment-service",
       "root_cause_service": "fulfillment-service",
       "retrieved_log_ids": [
@@ -172,7 +154,6 @@
     },
     {
       "case_id": "eval-d2-redis-latency",
-      "difficulty": 2,
       "alert_service": "cart-service",
       "root_cause_service": "cart-service",
       "retrieved_log_ids": [
@@ -197,7 +178,6 @@
     },
     {
       "case_id": "eval-d2-inventory-lock-wait",
-      "difficulty": 2,
       "alert_service": "inventory-service",
       "root_cause_service": "inventory-service",
       "retrieved_log_ids": [
@@ -221,7 +201,6 @@
     },
     {
       "case_id": "eval-d2-promotion-cpu",
-      "difficulty": 2,
       "alert_service": "promotion-service",
       "root_cause_service": "promotion-service",
       "retrieved_log_ids": [
@@ -245,7 +224,6 @@
     },
     {
       "case_id": "eval-d2-search-slow-warmup",
-      "difficulty": 2,
       "alert_service": "product-search-service",
       "root_cause_service": "product-search-service",
       "retrieved_log_ids": [
@@ -269,7 +247,6 @@
     },
     {
       "case_id": "eval-d3-gateway-inventory",
-      "difficulty": 3,
       "alert_service": "api-gateway",
       "root_cause_service": "inventory-service",
       "retrieved_log_ids": [
@@ -298,7 +275,6 @@
     },
     {
       "case_id": "eval-d3-order-payment-mysql",
-      "difficulty": 3,
       "alert_service": "order-service",
       "root_cause_service": "mysql-order",
       "retrieved_log_ids": [
@@ -327,7 +303,6 @@
     },
     {
       "case_id": "eval-d3-payment-upstream-fraud",
-      "difficulty": 3,
       "alert_service": "payment-service",
       "root_cause_service": "fraud-detection-service",
       "retrieved_log_ids": [
@@ -356,7 +331,6 @@
     },
     {
       "case_id": "eval-d3-fulfillment-carrier-dns",
-      "difficulty": 3,
       "alert_service": "fulfillment-service",
       "root_cause_service": "internal-dns",
       "retrieved_log_ids": [
@@ -385,7 +359,6 @@
     },
     {
       "case_id": "eval-d3-auth-upstream-idp",
-      "difficulty": 3,
       "alert_service": "auth-service",
       "root_cause_service": "identity-provider",
       "retrieved_log_ids": [
