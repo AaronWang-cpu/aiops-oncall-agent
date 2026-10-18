@@ -1,0 +1,16 @@
+.idea/
+.DS_Store
+.env
+.env.*
+.venv/
+apps/backend/var/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+docs/.vitepress/cache/
+docs/.vitepress/dist/
