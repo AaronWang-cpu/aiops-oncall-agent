@@ -92,10 +92,7 @@ def _compute_metrics(
 def run_eval() -> dict[str, Any]:
     per_case: list[dict[str, Any]] = []
 
-    difficulty_buckets: dict[int, list[dict[str, Any]]] = {1: [], 2: [], 3: []}
-
     for case in EVAL_CASES:
-        difficulty = int(case.case_id.split("-")[1][1])
         retrieved = _simulate_layer1_query(case)
         metrics = _compute_metrics(
             retrieved,
@@ -104,14 +101,12 @@ def run_eval() -> dict[str, Any]:
         )
         case_result: dict[str, Any] = {
             "case_id": case.case_id,
-            "difficulty": difficulty,
             "alert_service": str(case.alert.get("labels", {}).get("service", "")),  # type: ignore[union-attr]
             "root_cause_service": case.ground_truth.root_cause_service,
             "retrieved_log_ids": retrieved,
             **metrics,
         }
         per_case.append(case_result)
-        difficulty_buckets[difficulty].append(case_result)
 
     def _avg(cases: list[dict[str, Any]], key: str) -> float:
         if not cases:
@@ -124,12 +119,6 @@ def run_eval() -> dict[str, Any]:
         "overall_precision": _avg(per_case, "precision"),
         "total_cases": len(per_case),
     }
-    for d in [1, 2, 3]:
-        bucket = difficulty_buckets[d]
-        summary[f"d{d}_recall_relevant"] = _avg(bucket, "recall_relevant")
-        summary[f"d{d}_recall_root_cause"] = _avg(bucket, "recall_root_cause")
-        summary[f"d{d}_precision"] = _avg(bucket, "precision")
-        summary[f"d{d}_cases"] = len(bucket)
 
     result: dict[str, Any] = {
         "run_id": "layer1_service_time_window",
@@ -158,11 +147,6 @@ def main() -> None:
     print(f"整体 Recall(relevant): {s['overall_recall_relevant']}")
     print(f"整体 Recall(root_cause): {s['overall_recall_root_cause']}")
     print(f"整体 Precision: {s['overall_precision']}")
-    for d in [1, 2, 3]:
-        print(f"\n难度{d} ({s[f'd{d}_cases']} cases):")
-        print(f"  Recall(relevant):   {s[f'd{d}_recall_relevant']}")
-        print(f"  Recall(root_cause): {s[f'd{d}_recall_root_cause']}")
-        print(f"  Precision:          {s[f'd{d}_precision']}")
 
 
 if __name__ == "__main__":
