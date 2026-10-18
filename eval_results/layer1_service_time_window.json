@@ -1,0 +1,416 @@
+{
+  "run_id": "layer1_service_time_window",
+  "description": "第一层：service+时间窗口替换Query=*，Limit=50，时间窗口 startsAt-10min ~ startsAt+5min",
+  "config": {
+    "query_type": "service:{alert_service}",
+    "time_window_before_min": 10,
+    "time_window_after_min": 5,
+    "limit": 50
+  },
+  "summary": {
+    "overall_recall_relevant": 0.8095,
+    "overall_recall_root_cause": 0.6667,
+    "overall_precision": 0.6881,
+    "total_cases": 15,
+    "d1_recall_relevant": 1.0,
+    "d1_recall_root_cause": 1.0,
+    "d1_precision": 0.6667,
+    "d1_cases": 6,
+    "d2_recall_relevant": 1.0,
+    "d2_recall_root_cause": 1.0,
+    "d2_precision": 0.6429,
+    "d2_cases": 4,
+    "d3_recall_relevant": 0.4286,
+    "d3_recall_root_cause": 0.0,
+    "d3_precision": 0.75,
+    "d3_cases": 5
+  },
+  "per_case": [
+    {
+      "case_id": "eval-d1-order-db-pool",
+      "difficulty": 1,
+      "alert_service": "order-service",
+      "root_cause_service": "order-service",
+      "retrieved_log_ids": [
+        "d1-ord-002",
+        "d1-ord-001",
+        "d1-ord-003",
+        "d1-ord-004",
+        "d1-ord-005",
+        "d1-ord-006"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d1-payment-gateway-timeout",
+      "difficulty": 1,
+      "alert_service": "payment-service",
+      "root_cause_service": "payment-service",
+      "retrieved_log_ids": [
+        "d1-pay-004",
+        "d1-pay-002",
+        "d1-pay-001",
+        "d1-pay-003",
+        "d1-pay-006",
+        "d1-pay-005"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d1-auth-jwk-refresh",
+      "difficulty": 1,
+      "alert_service": "auth-service",
+      "root_cause_service": "auth-service",
+      "retrieved_log_ids": [
+        "d1-auth-003",
+        "d1-auth-002",
+        "d1-auth-001",
+        "d1-auth-004",
+        "d1-auth-006",
+        "d1-auth-005"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 2,
+      "relevant_total": 4,
+      "root_cause_total": 2,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d1-kafka-consumer-lag",
+      "difficulty": 1,
+      "alert_service": "order-event-consumer",
+      "root_cause_service": "order-event-consumer",
+      "retrieved_log_ids": [
+        "d1-kafka-004",
+        "d1-kafka-003",
+        "d1-kafka-002",
+        "d1-kafka-001",
+        "d1-kafka-006",
+        "d1-kafka-005"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 2,
+      "relevant_total": 4,
+      "root_cause_total": 2,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d1-es-search-timeout",
+      "difficulty": 1,
+      "alert_service": "product-search-service",
+      "root_cause_service": "product-search-service",
+      "retrieved_log_ids": [
+        "d1-es-004",
+        "d1-es-003",
+        "d1-es-001",
+        "d1-es-002",
+        "d1-es-006",
+        "d1-es-005"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d1-fulfillment-503",
+      "difficulty": 1,
+      "alert_service": "fulfillment-service",
+      "root_cause_service": "fulfillment-service",
+      "retrieved_log_ids": [
+        "d1-ful-003",
+        "d1-ful-002",
+        "d1-ful-001",
+        "d1-ful-004",
+        "d1-ful-006",
+        "d1-ful-005"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d2-redis-latency",
+      "difficulty": 2,
+      "alert_service": "cart-service",
+      "root_cause_service": "cart-service",
+      "retrieved_log_ids": [
+        "d2-cart-004",
+        "d2-cart-002",
+        "d2-cart-001",
+        "d2-cart-003",
+        "d2-cart-007",
+        "d2-cart-006",
+        "d2-cart-005"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.5714,
+      "retrieved_count": 7,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d2-inventory-lock-wait",
+      "difficulty": 2,
+      "alert_service": "inventory-service",
+      "root_cause_service": "inventory-service",
+      "retrieved_log_ids": [
+        "d2-inv-004",
+        "d2-inv-002",
+        "d2-inv-001",
+        "d2-inv-003",
+        "d2-inv-005",
+        "d2-inv-006"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d2-promotion-cpu",
+      "difficulty": 2,
+      "alert_service": "promotion-service",
+      "root_cause_service": "promotion-service",
+      "retrieved_log_ids": [
+        "d2-promo-003",
+        "d2-promo-004",
+        "d2-promo-001",
+        "d2-promo-002",
+        "d2-promo-005",
+        "d2-promo-006"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 1,
+      "relevant_total": 4,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d2-search-slow-warmup",
+      "difficulty": 2,
+      "alert_service": "product-search-service",
+      "root_cause_service": "product-search-service",
+      "retrieved_log_ids": [
+        "d2-srch-003",
+        "d2-srch-004",
+        "d2-srch-002",
+        "d2-srch-001",
+        "d2-srch-005",
+        "d2-srch-006"
+      ],
+      "recall_relevant": 1.0,
+      "recall_root_cause": 1.0,
+      "precision": 0.6667,
+      "retrieved_count": 6,
+      "relevant_hit_count": 4,
+      "root_cause_hit_count": 2,
+      "relevant_total": 4,
+      "root_cause_total": 2,
+      "missed_relevant_ids": [],
+      "missed_root_cause_ids": []
+    },
+    {
+      "case_id": "eval-d3-gateway-inventory",
+      "difficulty": 3,
+      "alert_service": "api-gateway",
+      "root_cause_service": "inventory-service",
+      "retrieved_log_ids": [
+        "d3-gw-003",
+        "d3-gw-002",
+        "d3-gw-001",
+        "d3-gw-004"
+      ],
+      "recall_relevant": 0.4286,
+      "recall_root_cause": 0.0,
+      "precision": 0.75,
+      "retrieved_count": 4,
+      "relevant_hit_count": 3,
+      "root_cause_hit_count": 0,
+      "relevant_total": 7,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [
+        "d3-inv-001",
+        "d3-inv-002",
+        "d3-inv-003",
+        "d3-inv-004"
+      ],
+      "missed_root_cause_ids": [
+        "d3-inv-003"
+      ]
+    },
+    {
+      "case_id": "eval-d3-order-payment-mysql",
+      "difficulty": 3,
+      "alert_service": "order-service",
+      "root_cause_service": "mysql-order",
+      "retrieved_log_ids": [
+        "d3-ord-001",
+        "d3-ord-002",
+        "d3-ord-003",
+        "d3-ord-004"
+      ],
+      "recall_relevant": 0.4286,
+      "recall_root_cause": 0.0,
+      "precision": 0.75,
+      "retrieved_count": 4,
+      "relevant_hit_count": 3,
+      "root_cause_hit_count": 0,
+      "relevant_total": 7,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [
+        "d3-mysql-001",
+        "d3-mysql-002",
+        "d3-mysql-003",
+        "d3-mysql-004"
+      ],
+      "missed_root_cause_ids": [
+        "d3-mysql-002"
+      ]
+    },
+    {
+      "case_id": "eval-d3-payment-upstream-fraud",
+      "difficulty": 3,
+      "alert_service": "payment-service",
+      "root_cause_service": "fraud-detection-service",
+      "retrieved_log_ids": [
+        "d3-pay-003",
+        "d3-pay-002",
+        "d3-pay-001",
+        "d3-pay-004"
+      ],
+      "recall_relevant": 0.4286,
+      "recall_root_cause": 0.0,
+      "precision": 0.75,
+      "retrieved_count": 4,
+      "relevant_hit_count": 3,
+      "root_cause_hit_count": 0,
+      "relevant_total": 7,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [
+        "d3-fraud-001",
+        "d3-fraud-002",
+        "d3-fraud-003",
+        "d3-fraud-004"
+      ],
+      "missed_root_cause_ids": [
+        "d3-fraud-003"
+      ]
+    },
+    {
+      "case_id": "eval-d3-fulfillment-carrier-dns",
+      "difficulty": 3,
+      "alert_service": "fulfillment-service",
+      "root_cause_service": "internal-dns",
+      "retrieved_log_ids": [
+        "d3-ful-003",
+        "d3-ful-002",
+        "d3-ful-001",
+        "d3-ful-004"
+      ],
+      "recall_relevant": 0.4286,
+      "recall_root_cause": 0.0,
+      "precision": 0.75,
+      "retrieved_count": 4,
+      "relevant_hit_count": 3,
+      "root_cause_hit_count": 0,
+      "relevant_total": 7,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [
+        "d3-dns-001",
+        "d3-dns-002",
+        "d3-dns-003",
+        "d3-dns-004"
+      ],
+      "missed_root_cause_ids": [
+        "d3-dns-002"
+      ]
+    },
+    {
+      "case_id": "eval-d3-auth-upstream-idp",
+      "difficulty": 3,
+      "alert_service": "auth-service",
+      "root_cause_service": "identity-provider",
+      "retrieved_log_ids": [
+        "d3-auth-002",
+        "d3-auth-003",
+        "d3-auth-001",
+        "d3-auth-004"
+      ],
+      "recall_relevant": 0.4286,
+      "recall_root_cause": 0.0,
+      "precision": 0.75,
+      "retrieved_count": 4,
+      "relevant_hit_count": 3,
+      "root_cause_hit_count": 0,
+      "relevant_total": 7,
+      "root_cause_total": 1,
+      "missed_relevant_ids": [
+        "d3-idp-001",
+        "d3-idp-002",
+        "d3-idp-003",
+        "d3-idp-004"
+      ],
+      "missed_root_cause_ids": [
+        "d3-idp-003"
+      ]
+    }
+  ]
+}
