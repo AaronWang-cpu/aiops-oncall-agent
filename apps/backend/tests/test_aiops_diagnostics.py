@@ -319,11 +319,16 @@ async def test_diagnostic_runs_sop_first_persists_evidence_and_audits(
     assert [checkpoint.checkpoint_ns for checkpoint in checkpoints] == [
         "planner",
         "executor",
-        "replanner",
+        "evidence_reasoning",
         "report",
     ]
     assert [audit.tool_name for audit in audits] == ["knowledge_retrieval", "SearchLog"]
-    assert [step.phase for step in steps] == ["planner", "executor", "replanner", "report"]
+    assert [step.phase for step in steps] == [
+        "planner",
+        "executor",
+        "evidence_reasoning",
+        "report",
+    ]
     assert {item.kind for item in evidence} == {"alert", "knowledge_reference", "log"}
     assert all(link.report_id == reports[0].id for link in report_links)
     assert {link.evidence_id for link in report_links} == {item.id for item in evidence}
