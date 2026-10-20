@@ -16,6 +16,17 @@ from uuid import uuid4
 from langgraph.graph import END, START, StateGraph
 
 from super_ai.aiops.cases import DiagnosisCasePersistor
+from super_ai.aiops.catalogs import (
+    get_dependencies,
+    get_metrics_for_service,
+)
+from super_ai.aiops.evidence_tools import (
+    build_change_time_range,
+    build_metric_time_range,
+    query_change,
+    query_metric,
+    resolve_change_query_services,
+)
 from super_ai.error_catalog import ERROR_DEFINITIONS
 from super_ai.llm import LlmProvider
 from super_ai.mcp_client import LocalMcpClient, McpClientError
@@ -51,6 +62,8 @@ class AiopsDiagnosticState(TypedDict, total=False):
     plan_index: int
     continue_execution: bool
     execution_failed: bool
+    rounds_used: int
+    reasoning_summary: str
     report_id: str
     events: Annotated[list[dict[str, object]], add]
     evidence: Annotated[list[JsonDict], add]
@@ -65,6 +78,9 @@ AIOPS_REPORT_REQUIRED_HEADINGS = (
     "## 📋 活跃告警清单",
     "## 📊 结论",
 )
+
+# 多轮证据追加的最大轮数（第 0 轮是 Planner 产出的首轮计划，再最多追加 1 轮）。
+MAX_REASONING_ROUNDS = 2
 
 
 class AiopsDiagnosticService:
@@ -129,6 +145,7 @@ class AiopsDiagnosticService:
             "accessible_knowledge_base_ids": tuple(accessible_knowledge_base_ids),
             "plan_index": 0,
             "execution_failed": False,
+            "rounds_used": 0,
             "events": [],
             "evidence": [],
             "evidence_ids": initial_evidence_ids,
@@ -181,14 +198,18 @@ class AiopsDiagnosticService:
         graph = StateGraph(AiopsDiagnosticState)
         graph.add_node("planner", self._planner)
         graph.add_node("executor", self._executor)
-        graph.add_node("replanner", self._replanner)
+        graph.add_node("evidence_reasoning", self._evidence_reasoning)
         graph.add_node("report", self._report)
         graph.add_edge(START, "planner")
         graph.add_edge("planner", "executor")
-        graph.add_edge("executor", "replanner")
         graph.add_conditional_edges(
-            "replanner",
-            self._route_after_replanner,
+            "executor",
+            self._route_after_executor,
+            {"executor": "executor", "evidence_reasoning": "evidence_reasoning"},
+        )
+        graph.add_conditional_edges(
+            "evidence_reasoning",
+            self._route_after_reasoning,
             {"executor": "executor", "report": "report"},
         )
         graph.add_edge("report", END)
@@ -416,6 +437,10 @@ class AiopsDiagnosticService:
                     "results": [_sop_hit_payload(hit) for hit in result.results],
                     "citations": [_citation_payload(citation) for citation in result.citations],
                 }
+            elif tool_name == "QueryMetric":
+                output = _invoke_query_metric(arguments)
+            elif tool_name == "QueryChange":
+                output = _invoke_query_change(arguments)
             elif tool_name:
                 mcp_client = await self._mcp_client_for(owner_user_id)
                 output = await mcp_client.call_tool(tool_name, arguments)
@@ -528,46 +553,63 @@ class AiopsDiagnosticService:
             "events": events,
         }
 
-    async def _replanner(self, state: AiopsDiagnosticState) -> dict[str, object]:
+    async def _evidence_reasoning(self, state: AiopsDiagnosticState) -> dict[str, object]:
+        """跨证据关联推理：聚合本轮已有证据，决定是否追加一轮查询或进入 Report。"""
         task_id = str(state["task_id"])
-        plan = cast(list[JsonDict], state.get("plan") or [])
-        plan_index = int(state.get("plan_index") or 0)
+        owner_user_id = str(state["owner_user_id"])
+        evidence = cast(list[JsonDict], state.get("evidence") or [])
         execution_failed = bool(state.get("execution_failed"))
-        continue_execution = plan_index < len(plan) and not execution_failed
-        decision = (
-            "continuing with the next bounded step" if continue_execution else "moving to Report"
+        rounds_used = int(state.get("rounds_used") or 0) + 1
+        alert = _json_dict(state.get("alert"))
+
+        follow_up_steps, reasoning_summary = self._decide_follow_up(
+            alert=alert,
+            evidence=evidence,
+            rounds_used=rounds_used,
+            execution_failed=execution_failed,
         )
+        decision = "executor" if follow_up_steps else "report"
         events = [
             _task_status_event(
                 task_id,
                 "running",
-                f"Replanner: {decision} based on recorded execution evidence.",
-                70 if continue_execution else 80,
+                f"Evidence Reasoning: round {rounds_used} -> {decision}; {reasoning_summary}",
+                70 if decision == "executor" else 80,
             )
         ]
         await self._create_step(
-            owner_user_id=str(state["owner_user_id"]),
+            owner_user_id=owner_user_id,
             task_id=task_id,
-            phase="replanner",
+            phase="evidence_reasoning",
             status="completed",
             payload={
-                "planIndex": plan_index,
-                "planLength": len(plan),
+                "roundsUsed": rounds_used,
                 "executionFailed": execution_failed,
-                "decision": "executor" if continue_execution else "report",
+                "decision": decision,
+                "reasoningSummary": reasoning_summary,
+                "followUpSteps": follow_up_steps,
             },
         )
         await self._save_checkpoint(
             state,
-            "replanner",
+            "evidence_reasoning",
             {
-                "planIndex": plan_index,
-                "planLength": len(plan),
+                "roundsUsed": rounds_used,
                 "executionFailed": execution_failed,
-                "decision": "executor" if continue_execution else "report",
+                "decision": decision,
+                "reasoningSummary": reasoning_summary,
             },
         )
-        return {"continue_execution": continue_execution, "events": events}
+        update: dict[str, object] = {
+            "rounds_used": rounds_used,
+            "reasoning_summary": reasoning_summary,
+            "continue_execution": bool(follow_up_steps),
+            "events": events,
+        }
+        if follow_up_steps:
+            existing_plan = cast(list[JsonDict], state.get("plan") or [])
+            update["plan"] = existing_plan + follow_up_steps
+        return update
 
     async def _report(self, state: AiopsDiagnosticState) -> dict[str, object]:
         task_id = str(state["task_id"])
@@ -683,7 +725,17 @@ class AiopsDiagnosticService:
         report = _clean_markdown_report(_model_text(response))
         return (report, "llm") if report is not None else (fallback, "fallback")
 
-    def _route_after_replanner(self, state: AiopsDiagnosticState) -> str:
+    def _route_after_executor(self, state: AiopsDiagnosticState) -> str:
+        """Executor 之后：若计划还有未执行步骤则继续，否则进入证据推理。"""
+        plan = cast(list[JsonDict], state.get("plan") or [])
+        plan_index = int(state.get("plan_index") or 0)
+        if bool(state.get("execution_failed")):
+            return "evidence_reasoning"
+        if plan_index < len(plan):
+            return "executor"
+        return "evidence_reasoning"
+
+    def _route_after_reasoning(self, state: AiopsDiagnosticState) -> str:
         return "executor" if state.get("continue_execution") else "report"
 
     async def _create_plan(
@@ -710,10 +762,117 @@ class AiopsDiagnosticService:
             plan = []
         search_log_steps = [step for step in plan if step.get("tool") == "SearchLog"]
         if not search_log_steps:
-            return generic_plan, "generic"
-        return [self._normalized_search_log_step(search_log_steps[0], query, alert)], (
-            "SOP-backed" if sop_hits else "generic"
-        )
+            search_log_step = generic_plan[0]
+            origin = "generic"
+        else:
+            search_log_step = self._normalized_search_log_step(
+                search_log_steps[0], query, alert
+            )
+            origin = "SOP-backed" if sop_hits else "generic"
+
+        plan_steps: list[JsonDict] = [search_log_step]
+
+        # 当告警具备 service + startsAt 时，附加 QueryMetric / QueryChange 并行步骤。
+        service = _alert_service(alert)
+        starts_at_ms = _alert_starts_at_ms(alert)
+        if service and starts_at_ms is not None:
+            metric_step = self._build_query_metric_step(service, starts_at_ms)
+            if metric_step is not None:
+                plan_steps.append(metric_step)
+            plan_steps.append(self._build_query_change_step(service, starts_at_ms))
+        return plan_steps, origin
+
+    def _build_query_metric_step(
+        self, service: str, alert_starts_at_ms: int
+    ) -> JsonDict | None:
+        """构建 QueryMetric 步骤：使用 Metric Catalog 白名单约束 metric_names。"""
+        metrics = get_metrics_for_service(service)
+        if not metrics:
+            return None
+        from_ms, to_ms = build_metric_time_range(alert_starts_at_ms)
+        metric_names = [m.name for m in metrics]
+        return {
+            "id": "query-metrics",
+            "tool": "QueryMetric",
+            "arguments": {
+                "service": service,
+                "metric_names": metric_names,
+                "time_range_ms": [from_ms, to_ms],
+                "aggregation": "avg",
+            },
+            "purpose": f"Collect metric evidence for {service} around the alert window.",
+        }
+
+    def _build_query_change_step(
+        self, service: str, alert_starts_at_ms: int
+    ) -> JsonDict:
+        """构建 QueryChange 步骤：使用服务拓扑解析告警服务 + 一级依赖。"""
+        services = resolve_change_query_services(service)
+        from_ms, to_ms = build_change_time_range(alert_starts_at_ms)
+        return {
+            "id": "query-changes",
+            "tool": "QueryChange",
+            "arguments": {
+                "services": services,
+                "time_range_ms": [from_ms, to_ms],
+                "alert_starts_at_ms": alert_starts_at_ms,
+            },
+            "purpose": (
+                f"Collect change events for {service} and its first-level dependencies."
+            ),
+        }
+
+    def _decide_follow_up(
+        self,
+        *,
+        alert: JsonDict,
+        evidence: Sequence[JsonDict],
+        rounds_used: int,
+        execution_failed: bool,
+    ) -> tuple[list[JsonDict], str]:
+        """基于已采集证据决定是否追加一轮查询。
+
+        规则（折中方案，不走 LLM，避免放大评测噪声）：
+          1. 若已达到最大轮数或已有失败，直接进入 Report。
+          2. 若 QueryChange 结果为空，且告警服务存在拓扑依赖，追加一次 QueryChange
+             指向二级依赖以兜底跨服务根因。
+          3. 否则进入 Report。
+        """
+        if execution_failed:
+            return [], "execution failed; moving to Report"
+        if rounds_used >= MAX_REASONING_ROUNDS:
+            return [], f"reached max rounds ({MAX_REASONING_ROUNDS})"
+
+        service = _alert_service(alert)
+        starts_at_ms = _alert_starts_at_ms(alert)
+        if not service or starts_at_ms is None:
+            return [], "no actionable alert metadata for follow-up"
+
+        change_evidence = [
+            item for item in evidence if str(item.get("tool") or "") == "QueryChange"
+        ]
+        has_change_hits = any(_change_evidence_has_hits(item) for item in change_evidence)
+        if change_evidence and not has_change_hits:
+            second_level = _second_level_services(service)
+            if second_level:
+                from_ms, to_ms = build_change_time_range(starts_at_ms)
+                follow_up: JsonDict = {
+                    "id": f"query-changes-r{rounds_used + 1}",
+                    "tool": "QueryChange",
+                    "arguments": {
+                        "services": second_level,
+                        "time_range_ms": [from_ms, to_ms],
+                        "alert_starts_at_ms": starts_at_ms,
+                    },
+                    "purpose": (
+                        "No change found on alert service or first-level deps; "
+                        "expanding to second-level dependencies."
+                    ),
+                }
+                return [follow_up], "expanded change query to second-level dependencies"
+        return [], "existing evidence sufficient"
+
+
 
     def _generic_search_log_step(self, query: str, alert: JsonDict) -> JsonDict:
         now_ms = int(_now().timestamp() * 1000)
@@ -1384,7 +1543,122 @@ def _safe_error(exc: Exception) -> str:
 def _evidence_kind_for_tool(tool_name: str) -> str:
     if tool_name == "knowledge_retrieval":
         return "knowledge_reference"
+    if tool_name == "QueryMetric":
+        return "metric"
+    if tool_name == "QueryChange":
+        return "change"
     return "log"
+
+
+def _alert_service(alert: JsonDict) -> str:
+    """从告警结构中解析目标服务（labels.service 优先，兼容顶层 service 字段）。"""
+    labels = _json_dict(alert.get("labels"))
+    service = str(labels.get("service") or alert.get("service") or "").strip()
+    return service
+
+
+def _alert_starts_at_ms(alert: JsonDict) -> int | None:
+    """解析 ISO8601 的 startsAt → 毫秒时间戳，解析失败返回 None。"""
+    raw = str(alert.get("startsAt") or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return int(parsed.timestamp() * 1000)
+
+
+def _second_level_services(alert_service: str) -> list[str]:
+    """展开告警服务的二级依赖（去重，排除告警服务自身与一级依赖）。"""
+    first_level = list(get_dependencies(alert_service))
+    seen: set[str] = {alert_service, *first_level}
+    second: list[str] = []
+    for svc in first_level:
+        for dep in get_dependencies(svc):
+            if dep in seen:
+                continue
+            seen.add(dep)
+            second.append(dep)
+    return second
+
+
+def _change_evidence_has_hits(evidence: JsonDict) -> bool:
+    """判断一条 QueryChange 证据是否命中了至少一个变更事件。"""
+    summary = evidence.get("summary")
+    if not isinstance(summary, str) or not summary:
+        return False
+    try:
+        parsed = json.loads(summary)
+    except json.JSONDecodeError:
+        return False
+    if isinstance(parsed, list):
+        return len(parsed) > 0
+    if isinstance(parsed, Mapping):
+        records = parsed.get("records")
+        if isinstance(records, list):
+            return len(records) > 0
+        event_count = parsed.get("recordCount")
+        if isinstance(event_count, int):
+            return event_count > 0
+    return False
+
+
+def _invoke_query_metric(arguments: JsonDict) -> object:
+    """以 dict 形式调用 query_metric：规范化参数，返回工具原生输出。"""
+    service = str(arguments.get("service") or "").strip()
+    raw_metric_names = arguments.get("metric_names") or []
+    metric_names = [
+        str(name) for name in raw_metric_names if isinstance(name, str)
+    ] if isinstance(raw_metric_names, list) else []
+    raw_range = arguments.get("time_range_ms")
+    if (
+        not isinstance(raw_range, list)
+        or len(raw_range) != 2
+        or not all(isinstance(v, int) for v in raw_range)
+    ):
+        raise ValueError("QueryMetric arguments missing valid time_range_ms.")
+    time_range = (int(raw_range[0]), int(raw_range[1]))
+    aggregation = str(arguments.get("aggregation") or "avg")
+    raw_labels = arguments.get("labels") or {}
+    labels = (
+        {str(k): str(v) for k, v in raw_labels.items()}
+        if isinstance(raw_labels, Mapping)
+        else {}
+    )
+    return query_metric(
+        service=service,
+        metric_names=metric_names,
+        time_range_ms=time_range,
+        aggregation=aggregation,
+        labels=labels,
+    )
+
+
+def _invoke_query_change(arguments: JsonDict) -> object:
+    """以 dict 形式调用 query_change：规范化参数，返回工具原生输出。"""
+    raw_services = arguments.get("services") or []
+    services = [
+        str(name) for name in raw_services if isinstance(name, str)
+    ] if isinstance(raw_services, list) else []
+    raw_range = arguments.get("time_range_ms")
+    if (
+        not isinstance(raw_range, list)
+        or len(raw_range) != 2
+        or not all(isinstance(v, int) for v in raw_range)
+    ):
+        raise ValueError("QueryChange arguments missing valid time_range_ms.")
+    time_range = (int(raw_range[0]), int(raw_range[1]))
+    alert_starts_at_ms = arguments.get("alert_starts_at_ms")
+    change_type = arguments.get("change_type")
+    return query_change(
+        services=services,
+        time_range_ms=time_range,
+        alert_starts_at_ms=int(alert_starts_at_ms)
+        if isinstance(alert_starts_at_ms, int)
+        else None,
+        change_type=str(change_type) if isinstance(change_type, str) else None,
+    )
 
 
 def _unique_strings(values: Sequence[str]) -> list[str]:
