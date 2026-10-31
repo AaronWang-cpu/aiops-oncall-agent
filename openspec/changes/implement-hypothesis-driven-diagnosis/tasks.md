@@ -4,11 +4,11 @@
 
 ## 1. P1 业务契约与配置
 
-- [ ] 1.1 在共享包定义五类业务结构、嵌套字段、状态、next_step/query_plan 和可选 diagnosis 投影；验证 package 契约测试覆盖字段集合、空列表、nullable 及 change。
-- [ ] 1.2 增加严格后端节点模型与引用/完整集合校验，保留评估不写 statement 的边界；新增模型测试覆盖多余字段、重复/遗漏 ID、非法引用、竞争反向重复和非法结论/路由。
-- [ ] 1.3 实现 aiopsDiagnosis JSON 加载、默认 real 与已定预算，同步两份模板；配置测试覆盖递归覆盖、缺分组默认、布尔值冒充整数、非法阶段总和，模板不得包含真实凭据。
-- [ ] 1.4 更新共享 OpenAPI 的可选调查结果、新阶段和 stream cursor 描述，不改既有路径/envelope；契约测试验证 401/403、历史无新字段及诊断/聊天事件兼容。
-- [ ] 1.5 补充配置与接口说明，明确目标与现状；运行 `npm run contracts:typecheck`、`npm --workspace packages/api-contracts run test` 及目标模型/配置 pytest 后核对文档字段。
+- [x] 1.1 在共享包定义五类业务结构、嵌套字段、状态、next_step/query_plan 和可选 diagnosis 投影；验证 package 契约测试覆盖字段集合、空列表、nullable 及 change。
+- [x] 1.2 增加严格后端节点模型与引用/完整集合校验，保留评估不写 statement 的边界；新增模型测试覆盖多余字段、重复/遗漏 ID、非法引用、竞争反向重复和非法结论/路由。
+- [x] 1.3 实现 aiopsDiagnosis JSON 加载、默认 real 与已定预算，同步两份模板；配置测试覆盖递归覆盖、缺分组默认、布尔值冒充整数、非法阶段总和，模板不得包含真实凭据。
+- [x] 1.4 更新共享 OpenAPI 的可选调查结果、新阶段和 stream cursor 描述，不改既有路径/envelope；契约测试验证 401/403、历史无新字段及诊断/聊天事件兼容。
+- [x] 1.5 补充配置与接口说明，明确目标与现状；运行 `npm run contracts:typecheck`、`npm --workspace packages/api-contracts run test` 及目标模型/配置 pytest 后核对文档字段。
 
 ## 2. P2 事务、预算状态与安全恢复
 

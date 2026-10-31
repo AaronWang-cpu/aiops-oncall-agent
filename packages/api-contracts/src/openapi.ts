@@ -1,5 +1,7 @@
 import { API_ERROR_CODES } from "./errors";
 import { DOCUMENT_UPLOAD_POLICY } from "./documents";
+import { DIAGNOSIS_PHASES } from "./diagnosis";
+import { DIAGNOSIS_SCHEMAS } from "./diagnosis-schema";
 
 type HttpMethod = "delete" | "get" | "post" | "put";
 
@@ -14,6 +16,9 @@ interface OpenApiSchema {
   readonly $ref?: string;
   readonly minimum?: number;
   readonly maximum?: number;
+  readonly minLength?: number;
+  readonly minItems?: number;
+  readonly maxItems?: number;
 }
 
 interface OpenApiOperation {
@@ -822,6 +827,11 @@ export const OPENAPI_CONTRACT = {
         summary: "Stream AIOps diagnostic events",
         tags: ["aiops"],
         security: bearerSecurity,
+        parameters: [{
+          name: "Last-Event-ID", in: "header", required: false,
+          description: "Resume after a persisted event belonging to this user and diagnostic job",
+          schema: { type: "string" }
+        }],
         responses: {
           "200": {
             description: "SSE stream of AIOps diagnostic events",
@@ -852,6 +862,7 @@ export const OPENAPI_CONTRACT = {
       }
     },
     schemas: {
+      ...DIAGNOSIS_SCHEMAS,
       ApiResponseMeta: {
         type: "object",
         required: ["requestId"],
@@ -1798,10 +1809,13 @@ export const OPENAPI_CONTRACT = {
         properties: {
           id: { type: "string" },
           ownerUserId: { type: "string" },
-          status: { enum: ["accepted", "running", "succeeded", "failed"] },
+          status: { enum: ["accepted", "running", "succeeded", "failed", "cancelled"] },
           query: { type: "string" },
           inputPayload: { type: "object", additionalProperties: true },
-          resultPayload: { type: "object", additionalProperties: true },
+          resultPayload: {
+            type: "object", additionalProperties: true,
+            properties: { diagnosis: { $ref: "#/components/schemas/DiagnosisResult" } }
+          },
           createdAt: { type: "string" },
           updatedAt: { type: "string" },
           completedAt: { type: ["string", "null"] },
@@ -1930,7 +1944,7 @@ export const OPENAPI_CONTRACT = {
           taskId: { type: "string" },
           stepId: { type: ["string", "null"] },
           toolCallId: { type: ["string", "null"] },
-          kind: { enum: ["log", "metric", "alert", "ticket", "knowledge_reference"] },
+          kind: { enum: ["log", "metric", "change", "alert", "ticket", "knowledge_reference"] },
           source: { type: "string" },
           summary: { type: "string" },
           payload: { type: "object", additionalProperties: true },
@@ -2111,7 +2125,23 @@ export const OPENAPI_CONTRACT = {
           }
         }
       },
-      TaskStatusEvent: { type: "object" },
+      TaskStatusEvent: {
+        type: "object",
+        properties: {
+          task: {
+            type: "object",
+            required: ["id", "status"],
+            properties: {
+              id: { type: "string" },
+              status: { enum: ["queued", "running", "succeeded", "failed", "cancelled"] },
+              progress: { type: "number" },
+              message: { type: "string" },
+              phase: { enum: DIAGNOSIS_PHASES },
+              diagnosis: { $ref: "#/components/schemas/DiagnosisResult" }
+            }
+          }
+        }
+      },
       ReportEvent: { type: "object" },
       CompleteEvent: { type: "object" },
       ErrorEvent: {

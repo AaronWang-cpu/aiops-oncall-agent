@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 import { defineStore } from "pinia";
 
 import type {
@@ -23,15 +23,15 @@ export function setAiopsClientFactoryForTests(factory: (() => AiopsClient) | nul
 
 export const useAiopsStore = defineStore("aiops", () => {
   const client = clientFactory();
-  const history = ref<readonly AiopsDiagnosticSummary[]>([]);
+  const history = shallowRef<readonly AiopsDiagnosticSummary[]>([]);
   const activeAlerts = ref<readonly ActiveAlert[]>([]);
   const diagnosticCases = ref<readonly AiopsDiagnosticCase[]>([]);
   const alertsErrorMessage = ref<string | null>(null);
   const alertsLoading = ref(false);
   const activeDiagnosticId = ref<string | null>(null);
-  const activeTask = ref<AiopsDiagnosticSummary | null>(null);
-  const evidenceChain = ref<AiopsDiagnosticEvidenceChain | null>(null);
-  const liveEvents = ref<readonly SseEvent[]>([]);
+  const activeTask = shallowRef<AiopsDiagnosticSummary | null>(null);
+  const evidenceChain = shallowRef<AiopsDiagnosticEvidenceChain | null>(null);
+  const liveEvents = shallowRef<readonly SseEvent[]>([]);
   const isLoading = ref(false);
   const isRunning = ref(false);
   const errorMessage = ref<string | null>(null);

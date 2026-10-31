@@ -15,6 +15,7 @@ export * from "./background-jobs";
 export * from "./chat";
 export * from "./chat-configuration";
 export * from "./documents";
+export * from "./diagnosis";
 export * from "./errors";
 export * from "./feedback";
 export * from "./indexing";

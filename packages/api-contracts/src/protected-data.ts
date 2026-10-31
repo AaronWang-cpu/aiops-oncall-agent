@@ -1,5 +1,6 @@
 import type { ToolCallAudit } from "./chat";
 import type { BackgroundJob } from "./background-jobs";
+import type { DiagnosisResult } from "./diagnosis";
 
 export interface KnowledgeBaseSummary {
   readonly id: string;
@@ -17,7 +18,7 @@ export interface AiopsDiagnosticSummary {
   readonly status: AiopsDiagnosticStatus;
   readonly query: string;
   readonly inputPayload: Record<string, unknown>;
-  readonly resultPayload: Record<string, unknown>;
+  readonly resultPayload: Record<string, unknown> & { readonly diagnosis?: DiagnosisResult };
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly completedAt: string | null;
@@ -69,7 +70,8 @@ export interface AiopsDiagnosticStep {
   readonly createdAt: string;
 }
 
-export type AiopsEvidenceKind = "log" | "metric" | "alert" | "ticket" | "knowledge_reference";
+export type AiopsEvidenceKind =
+  | "log" | "metric" | "change" | "alert" | "ticket" | "knowledge_reference";
 
 export interface AiopsDiagnosticEvidence {
   readonly id: string;

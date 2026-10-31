@@ -13,6 +13,22 @@
     "apiBaseUrl": "http://127.0.0.1:8000",
     "publicAnalyticsKey": "local-dev-analytics-disabled"
   },
+  "aiopsDiagnosis": {
+    "mode": "real",
+    "mockScenarioPath": "",
+    "projectKnowledgePath": "",
+    "maxRounds": 5,
+    "maxToolCalls": 20,
+    "maxCallsPerBatch": 4,
+    "maxConcurrentCalls": 4,
+    "maxInternalSteps": 2,
+    "investigationSeconds": 390,
+    "finalAnalysisSeconds": 60,
+    "reportSeconds": 30,
+    "totalSeconds": 480,
+    "toolTimeoutSeconds": 60,
+    "modelTimeoutSeconds": 60
+  },
   "llm": {
     "provider": "qwen-openai",
     "apiKey": "",

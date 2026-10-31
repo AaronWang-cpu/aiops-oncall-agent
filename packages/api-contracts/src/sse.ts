@@ -1,4 +1,5 @@
 import type { ApiErrorMessage } from "./responses";
+import type { DiagnosisPhase, DiagnosisResult } from "./diagnosis";
 
 export const SSE_EVENT_TYPES = [
   "content.delta",
@@ -71,6 +72,8 @@ export interface TaskStatusSseEvent extends SseEventBase<"task.status"> {
     readonly status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
     readonly progress?: number;
     readonly message?: string;
+    readonly phase?: DiagnosisPhase;
+    readonly diagnosis?: DiagnosisResult;
   };
 }
 
