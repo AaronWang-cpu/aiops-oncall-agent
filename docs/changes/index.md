@@ -6,7 +6,7 @@ title: OpenSpec 变更
 
 ## 进行中
 
-当前没有进行中的变更。
+- [implement-hypothesis-driven-diagnosis](/changes/active/implement-hypothesis-driven-diagnosis/)
 
 ## 已归档
 
