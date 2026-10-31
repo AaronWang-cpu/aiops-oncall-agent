@@ -519,12 +519,20 @@ def create_app(
         job_id: str,
         user: Annotated[UserRecord, Depends(_current_user)],
     ) -> object:
+        existing = await _background_job_repository(request).get(
+            owner_user_id=user.id,
+            job_id=job_id,
+        )
+        if existing is None:
+            raise ApiErrorException("AUTH_FORBIDDEN")
+        if existing.status not in {"queued", "running"}:
+            raise ApiErrorException("BUSINESS_CONFLICT")
         job = await _background_job_repository(request).request_cancel(
             owner_user_id=user.id,
             job_id=job_id,
         )
         if job is None:
-            raise ApiErrorException("AUTH_FORBIDDEN")
+            raise ApiErrorException("BUSINESS_CONFLICT")
         await _cancel_background_resource(request, job)
         return success_response(request, _background_job_payload(job))
 
@@ -534,6 +542,14 @@ def create_app(
         job_id: str,
         user: Annotated[UserRecord, Depends(_current_user)],
     ) -> object:
+        if (
+            await _background_job_repository(request).get(
+                owner_user_id=user.id,
+                job_id=job_id,
+            )
+            is None
+        ):
+            raise ApiErrorException("AUTH_FORBIDDEN")
         job = await _background_job_repository(request).retry(
             owner_user_id=user.id,
             source_job_id=job_id,
@@ -1803,13 +1819,6 @@ async def _cancel_background_resource(request: Request, job: BackgroundJobRecord
             owner_user_id=job.owner_user_id,
             task_id=job.resource_id,
         )
-    if job.resource_type == "aiops_diagnostic":
-        await repositories.diagnostics.update_task(
-            owner_user_id=job.owner_user_id,
-            task_id=job.resource_id,
-            status="cancelled",
-            completed_at=datetime.now(timezone.utc),
-        )
 
 
 def _background_job_payload(job: BackgroundJobRecord) -> dict[str, object]:
@@ -2179,8 +2188,6 @@ def _aiops_diagnostic_runner(request: Request) -> AiopsDiagnosticRunner:
             ),
         )
         request.app.state.aiops_diagnostic_runner = runner
-    else:
-        _document_vector_store(request).ensure_collection()
     return runner
 
 

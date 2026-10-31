@@ -4,14 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime, timezone
+from hashlib import sha256
 from typing import cast
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from super_ai.memory.models import (
     BackgroundJobEventModel,
     BackgroundJobModel,
+    DiagnosticTaskModel,
     McpConnectionModel,
     UserFeedbackModel,
     utc_now,
@@ -19,6 +21,7 @@ from super_ai.memory.models import (
 from super_ai.memory.repositories import (
     BackgroundJobEventRecord,
     BackgroundJobRecord,
+    DiagnosticLeaseLost,
     JsonDict,
     McpConnectionRecord,
     UserFeedbackRecord,
@@ -120,12 +123,13 @@ class SQLiteBackgroundJobRepository:
     ) -> BackgroundJobRecord | None:
         claimed_at = now or utc_now()
         async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
             await session.execute(
                 update(BackgroundJobModel)
                 .where(
                     BackgroundJobModel.status == "running",
                     BackgroundJobModel.lease_expires_at.is_not(None),
-                    BackgroundJobModel.lease_expires_at < claimed_at,
+                    BackgroundJobModel.lease_expires_at <= claimed_at,
                 )
                 .values(
                     status="queued",
@@ -140,7 +144,6 @@ class SQLiteBackgroundJobRepository:
                 .where(
                     BackgroundJobModel.status == "queued",
                     BackgroundJobModel.available_at <= claimed_at,
-                    BackgroundJobModel.cancel_requested_at.is_(None),
                 )
                 .order_by(
                     BackgroundJobModel.available_at.asc(),
@@ -165,13 +168,18 @@ class SQLiteBackgroundJobRepository:
         job_id: str,
         worker_id: str,
         lease_expires_at: datetime,
+        attempt: int | None = None,
     ) -> bool:
         stmt = select(BackgroundJobModel).where(
             BackgroundJobModel.id == job_id,
             BackgroundJobModel.status == "running",
             BackgroundJobModel.lease_owner == worker_id,
+            BackgroundJobModel.lease_expires_at > utc_now(),
         )
+        if attempt is not None:
+            stmt = stmt.where(BackgroundJobModel.attempt == attempt)
         async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
             row = (await session.scalars(stmt)).one_or_none()
             if row is None:
                 return False
@@ -185,12 +193,17 @@ class SQLiteBackgroundJobRepository:
         owner_user_id: str,
         job_id: str,
         payload: JsonDict,
+        worker_id: str | None = None,
+        attempt: int | None = None,
     ) -> BackgroundJobEventRecord:
         now = utc_now()
         async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
             job = await session.get(BackgroundJobModel, job_id)
             if job is None or job.owner_user_id != owner_user_id:
                 raise PermissionError(f"Background job is not accessible: {job_id}")
+            if worker_id is not None and not _has_lease(job, worker_id, attempt, utc_now()):
+                raise DiagnosticLeaseLost("Background job lease is no longer valid.")
             latest = await session.scalar(
                 select(func.max(BackgroundJobEventModel.sequence)).where(
                     BackgroundJobEventModel.job_id == job_id
@@ -234,10 +247,19 @@ class SQLiteBackgroundJobRepository:
     ) -> BackgroundJobRecord | None:
         now = utc_now()
         async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
             row = await session.get(BackgroundJobModel, job_id)
             if row is None or row.owner_user_id != owner_user_id:
                 return None
-            if row.status == "queued":
+            if row.status not in {"queued", "running"}:
+                return None
+            if row.resource_type == "aiops_diagnostic" and row.started_at is not None:
+                row.cancel_requested_at = now
+            elif row.status == "queued":
+                if row.resource_type == "aiops_diagnostic":
+                    from super_ai.memory.diagnosis_sqlite import cancel_queued_diagnosis
+
+                    await cancel_queued_diagnosis(session, row)
                 row.status = "cancelled"
                 row.completed_at = now
             elif row.status == "running":
@@ -245,20 +267,31 @@ class SQLiteBackgroundJobRepository:
             row.updated_at = now
         return _background_job_record(row)
 
-    async def mark_succeeded(self, *, job_id: str, worker_id: str) -> BackgroundJobRecord | None:
-        return await self._finish(job_id, worker_id, "succeeded", None)
+    async def mark_succeeded(
+        self, *, job_id: str, worker_id: str, attempt: int | None = None
+    ) -> BackgroundJobRecord | None:
+        return await self._finish(job_id, worker_id, "succeeded", None, attempt)
 
-    async def mark_cancelled(self, *, job_id: str, worker_id: str) -> BackgroundJobRecord | None:
-        return await self._finish(job_id, worker_id, "cancelled", None)
+    async def mark_cancelled(
+        self, *, job_id: str, worker_id: str, attempt: int | None = None
+    ) -> BackgroundJobRecord | None:
+        return await self._finish(job_id, worker_id, "cancelled", None, attempt)
 
     async def _finish(
-        self, job_id: str, worker_id: str, status: str, error: str | None
+        self,
+        job_id: str,
+        worker_id: str,
+        status: str,
+        error: str | None,
+        attempt: int | None,
     ) -> BackgroundJobRecord | None:
         now = utc_now()
         async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
             row = await session.get(BackgroundJobModel, job_id)
-            if row is None or row.lease_owner != worker_id or row.status != "running":
+            if not _has_lease(row, worker_id, attempt, now):
                 return None
+            assert row is not None
             row.status = status
             row.error_message = error
             row.completed_at = now
@@ -274,12 +307,15 @@ class SQLiteBackgroundJobRepository:
         worker_id: str,
         error_message: str,
         retry_at: datetime,
+        attempt: int | None = None,
     ) -> BackgroundJobRecord | None:
         now = utc_now()
         async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
             row = await session.get(BackgroundJobModel, job_id)
-            if row is None or row.lease_owner != worker_id or row.status != "running":
+            if not _has_lease(row, worker_id, attempt, now):
                 return None
+            assert row is not None
             row.error_message = error_message
             row.updated_at = now
             row.lease_owner = None
@@ -299,20 +335,61 @@ class SQLiteBackgroundJobRepository:
         source_job_id: str,
         new_job_id: str,
     ) -> BackgroundJobRecord | None:
-        source = await self.get(owner_user_id=owner_user_id, job_id=source_job_id)
-        if source is None or source.status not in {"failed", "cancelled"}:
-            return None
-        return await self.enqueue(
-            owner_user_id=owner_user_id,
-            job_id=new_job_id,
-            kind=source.kind,
-            resource_type=source.resource_type,
-            resource_id=source.resource_id,
-            payload=source.payload,
-            max_attempts=source.max_attempts,
-            timeout_seconds=source.timeout_seconds,
-            retry_of_job_id=source.id,
-        )
+        now = utc_now()
+        async with self._session_factory() as session, session.begin():
+            await session.execute(text("BEGIN IMMEDIATE"))
+            source = await session.get(BackgroundJobModel, source_job_id)
+            if (
+                source is None
+                or source.owner_user_id != owner_user_id
+                or source.status not in {"failed", "cancelled"}
+            ):
+                return None
+            resource_id = source.resource_id
+            payload = _json_dict(source.payload)
+            if source.resource_type == "aiops_diagnostic":
+                task = await session.get(DiagnosticTaskModel, source.resource_id)
+                if task is None or task.owner_user_id != owner_user_id:
+                    return None
+                resource_id = "diagnostic_" + sha256(new_job_id.encode()).hexdigest()[:40]
+                session.add(
+                    DiagnosticTaskModel(
+                        id=resource_id,
+                        owner_user_id=owner_user_id,
+                        status="queued",
+                        query=task.query,
+                        input_payload=_json_dict(task.input_payload),
+                        result_payload={},
+                        created_at=now,
+                        updated_at=now,
+                        completed_at=None,
+                    )
+                )
+                payload = {**payload, "diagnosticId": resource_id}
+            row = BackgroundJobModel(
+                id=new_job_id,
+                owner_user_id=owner_user_id,
+                kind=source.kind,
+                resource_type=source.resource_type,
+                resource_id=resource_id,
+                status="queued",
+                payload=payload,
+                attempt=0,
+                max_attempts=source.max_attempts,
+                timeout_seconds=source.timeout_seconds,
+                available_at=now,
+                lease_owner=None,
+                lease_expires_at=None,
+                cancel_requested_at=None,
+                retry_of_job_id=source.id,
+                error_message=None,
+                created_at=now,
+                updated_at=now,
+                started_at=None,
+                completed_at=None,
+            )
+            session.add(row)
+        return _background_job_record(row)
 
 
 class SQLiteUserFeedbackRepository:
@@ -523,6 +600,22 @@ async def _scoped_connection(
         McpConnectionModel.owner_user_id == owner_user_id,
     )
     return (await session.scalars(stmt)).one_or_none()
+
+
+def _has_lease(
+    row: BackgroundJobModel | None,
+    worker_id: str,
+    attempt: int | None,
+    now: datetime,
+) -> bool:
+    return (
+        row is not None
+        and row.status == "running"
+        and row.lease_owner == worker_id
+        and row.lease_expires_at is not None
+        and _ensure_utc(row.lease_expires_at) > now
+        and (attempt is None or row.attempt == attempt)
+    )
 
 
 def _background_job_record(row: BackgroundJobModel) -> BackgroundJobRecord:

@@ -1540,6 +1540,7 @@ def create_sqlite_memory_repositories(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> MemoryRepositories:
     """Create a repository bundle backed by SQLite-compatible SQLAlchemy sessions."""
+    from super_ai.memory.diagnosis_sqlite import SQLiteDiagnosticRuntimeRepository
     from super_ai.memory.extended_sqlite import (
         SQLiteBackgroundJobRepository,
         SQLiteMcpConnectionRepository,
@@ -1554,6 +1555,7 @@ def create_sqlite_memory_repositories(
         documents=SQLiteKnowledgeDocumentRepository(session_factory),
         document_index_tasks=SQLiteDocumentIndexTaskRepository(session_factory),
         diagnostics=SQLiteDiagnosticMemoryRepository(session_factory),
+        diagnosis_runtime=SQLiteDiagnosticRuntimeRepository(session_factory),
         tool_call_audits=SQLiteToolCallAuditRepository(session_factory),
         background_jobs=SQLiteBackgroundJobRepository(session_factory),
         feedback=SQLiteUserFeedbackRepository(session_factory),

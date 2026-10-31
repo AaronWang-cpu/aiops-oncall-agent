@@ -12,15 +12,17 @@
 
 ## 2. P2 事务、预算状态与安全恢复
 
-- [ ] 2.1 增加 Repository 的 reserve/query/node/finish 一致提交 Protocol 及 SQLite 实现；事务故障注入测试验证任一步失败整次回滚，禁止领域代码直接操作 session。
-- [ ] 2.2 实现安全领取、租约有效性与 claim 代次写入校验；并发测试覆盖两个 worker 竞争、旧 worker 迟到、过期同 worker ID，验证不能重复 dispatch 或覆盖结果。
-- [ ] 2.3 实现持久调用 intent、预算预占、实际发起计数与 unknown 占用；测试覆盖预占前/后、实际发起前/后崩溃、可证明未发起释放、同批只计一轮。
-- [ ] 2.4 保存 current state/last valid assessment/next_node 及稳定提交身份，原始数据仅存证据并解引用；测试验证节点/查询重入幂等、关系失效与完整结果恢复。
-- [ ] 2.5 扩展 BackgroundJobContext 的执行者信息及诊断已提交终态识别；测试验证 Runtime 不二次标成功/失败/取消，其他 handler 原有重试策略不变。
-- [ ] 2.6 实现失租后停写/停调用，租约恢复进入已保存阶段；恢复测试覆盖工具不重放、核心模型中断程序失败收尾、报告中断兜底和截止时间不重置。
-- [ ] 2.7 一致协调 queued/running 取消与终态提交；测试覆盖排队取消不加载外部资源、并发取消、已终态取消拒绝和真实 partial 返回保留。
-- [ ] 2.8 为诊断显式 retry 新建 task/job 保留旧终态，其他 retry 保持；API/权限测试覆盖非 owner、失败/取消重试及旧报告不改写，不引入自动重试。
-- [ ] 2.9 更新恢复、预算不确定和终态文档；运行目标 Repository/Runtime 测试及 `test_extended_capabilities.py`、`test_memory_repositories.py`、`test_memory_migrations.py`。如必须改 schema，先取得具体迁移确认再新增 revision 和升级测试。
+- [x] 2.1 增加 Repository 的 reserve/query/node/finish 一致提交 Protocol 及 SQLite 实现；事务故障注入测试验证任一步失败整次回滚，禁止领域代码直接操作 session。
+- [x] 2.2 实现安全领取、租约有效性与 claim 代次写入校验；并发测试覆盖两个 worker 竞争、旧 worker 迟到、过期同 worker ID，验证不能重复 dispatch 或覆盖结果。
+- [x] 2.3 实现持久调用 intent、预算预占、实际发起计数与 unknown 占用；测试覆盖预占前/后、实际发起前/后崩溃、可证明未发起释放、同批只计一轮。
+- [x] 2.4 保存 current state/last valid assessment/next_node 及稳定提交身份，原始数据仅存证据并解引用；测试验证节点/查询重入幂等、关系失效与完整结果恢复。
+- [x] 2.5 扩展 BackgroundJobContext 的执行者信息及诊断已提交终态识别；测试验证 Runtime 不二次标成功/失败/取消，其他 handler 原有重试策略不变。
+- [x] 2.6 实现失租后停写/停调用，租约恢复进入已保存阶段；恢复测试覆盖工具不重放、核心模型中断程序失败收尾、报告中断兜底和截止时间不重置。
+- [x] 2.7 一致协调 queued/running 取消与终态提交；测试覆盖排队取消不加载外部资源、并发取消、已终态取消拒绝和真实 partial 返回保留。
+- [x] 2.8 为诊断显式 retry 新建 task/job 保留旧终态，其他 retry 保持；API/权限测试覆盖非 owner、失败/取消重试及旧报告不改写，不引入自动重试。
+- [x] 2.9 更新恢复、预算不确定和终态文档；运行目标 Repository/Runtime 测试及 `test_extended_capabilities.py`、`test_memory_repositories.py`、`test_memory_migrations.py`。如必须改 schema，先取得具体迁移确认再新增 revision 和升级测试。
+
+P2 验收边界：本阶段完成持久底座、恢复决策及诊断终态回调接口，仍不切换默认旧图。七节点对恢复决策、真实传输和报告生成的接线，以及统一诊断流在 P4 完成；联合中断恢复验收在 6.1 完成。本阶段 100 项目标与兼容测试通过，无 schema 修改；细节见 `docs/aiops/hypothesis-driven-runtime.md`。
 
 ## 3. P3 上下文与隔离工具
 

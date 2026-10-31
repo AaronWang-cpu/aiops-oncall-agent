@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
+from typing import Literal, Protocol
 
 ChatMemoryMode = str
 
@@ -1047,6 +1047,7 @@ class BackgroundJobRepository(Protocol):
         job_id: str,
         worker_id: str,
         lease_expires_at: datetime,
+        attempt: int | None = None,
     ) -> bool: ...
 
     async def append_event(
@@ -1055,6 +1056,8 @@ class BackgroundJobRepository(Protocol):
         owner_user_id: str,
         job_id: str,
         payload: JsonDict,
+        worker_id: str | None = None,
+        attempt: int | None = None,
     ) -> BackgroundJobEventRecord: ...
 
     async def list_events(
@@ -1070,11 +1073,11 @@ class BackgroundJobRepository(Protocol):
     ) -> BackgroundJobRecord | None: ...
 
     async def mark_succeeded(
-        self, *, job_id: str, worker_id: str
+        self, *, job_id: str, worker_id: str, attempt: int | None = None
     ) -> BackgroundJobRecord | None: ...
 
     async def mark_cancelled(
-        self, *, job_id: str, worker_id: str
+        self, *, job_id: str, worker_id: str, attempt: int | None = None
     ) -> BackgroundJobRecord | None: ...
 
     async def handle_failure(
@@ -1084,6 +1087,7 @@ class BackgroundJobRepository(Protocol):
         worker_id: str,
         error_message: str,
         retry_at: datetime,
+        attempt: int | None = None,
     ) -> BackgroundJobRecord | None: ...
 
     async def retry(
@@ -1171,6 +1175,111 @@ class McpConnectionRepository(Protocol):
     async def delete(self, *, owner_user_id: str, connection_id: str) -> bool: ...
 
 
+class DiagnosticLeaseLost(RuntimeError):
+    """The current worker no longer owns a valid diagnostic job lease."""
+
+
+class DiagnosticStateConflict(RuntimeError):
+    """An operation attempted to overwrite a newer or incompatible checkpoint."""
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticExecutionScope:
+    owner_user_id: str
+    task_id: str
+    job_id: str
+    worker_id: str
+    attempt: int
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticNodeWrite:
+    operation_id: str
+    expected_revision: int
+    checkpoint: JsonDict
+    phase: str
+    payload: JsonDict
+    events: list[JsonDict]
+    result_payload: JsonDict | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticReservationWrite:
+    operation_id: str
+    expected_revision: int
+    checkpoint: JsonDict
+    kind: Literal["model", "tool"]
+    phase: str
+    query: JsonDict | None = None
+    events: list[JsonDict] | None = None
+    stage: Literal["reserve", "dispatch"] = "reserve"
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticEvidenceWrite:
+    evidence_id: str
+    kind: str
+    source: str
+    summary: str
+    payload: JsonDict
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticQueryWrite:
+    operation_id: str
+    expected_revision: int
+    checkpoint: JsonDict
+    query: JsonDict
+    evidence: list[DiagnosticEvidenceWrite]
+    events: list[JsonDict]
+    result_payload: JsonDict | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticTerminalWrite:
+    operation_id: str
+    expected_revision: int
+    checkpoint: JsonDict
+    status: Literal["succeeded", "failed", "cancelled"]
+    title: str
+    content: str
+    result_payload: JsonDict
+    evidence_ids: list[str]
+    error_message: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticCommitResult:
+    checkpoint: JsonDict
+    already_committed: bool
+
+
+class DiagnosticRuntimeRepository(Protocol):
+    """Atomic diagnostic transitions; callers never pass database sessions."""
+
+    async def load_state(self, *, owner_user_id: str, task_id: str) -> JsonDict | None: ...
+
+    async def load_evidence(
+        self, *, owner_user_id: str, task_id: str, evidence_ids: list[str],
+    ) -> list[JsonDict]: ...
+
+    async def reserve_diagnostic_operation(
+        self, *, scope: DiagnosticExecutionScope, write: DiagnosticReservationWrite
+    ) -> DiagnosticCommitResult: ...
+
+    async def commit_diagnostic_query(
+        self, *, scope: DiagnosticExecutionScope, write: DiagnosticQueryWrite
+    ) -> DiagnosticCommitResult: ...
+
+    async def commit_diagnostic_node(
+        self, *, scope: DiagnosticExecutionScope, write: DiagnosticNodeWrite
+    ) -> DiagnosticCommitResult: ...
+
+    async def finish_diagnostic_job(
+        self, *, scope: DiagnosticExecutionScope, write: DiagnosticTerminalWrite
+    ) -> DiagnosticCommitResult: ...
+
+
 @dataclass(frozen=True, slots=True)
 class MemoryRepositories:
     """Repository bundle for dependency injection."""
@@ -1186,3 +1295,4 @@ class MemoryRepositories:
     background_jobs: BackgroundJobRepository | None = None
     feedback: UserFeedbackRepository | None = None
     mcp_connections: McpConnectionRepository | None = None
+    diagnosis_runtime: DiagnosticRuntimeRepository | None = None
