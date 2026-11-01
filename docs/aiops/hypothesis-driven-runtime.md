@@ -13,7 +13,7 @@
 | P3 固定上下文与隔离工具 | 上下文与工具适配器验收通过；七节点调用在 P4 接线 |
 | P4 假设图、预算与报告 | 后端七节点、报告、终态与 SSE 验收通过；旧图已替换 |
 | P5 前端展示与兼容 | 三栏工作区、假设与事故结论展示、模拟/失败标识、流去重与续读验收通过；浏览器截图在 P6 提供 |
-| P6 联合验收与本机启动 | 后端/前端/契约全量回归、跨 owner 隔离与脱敏集成测试、本机启动与浏览器体检、主规格归档均已完成；本机验收发现的三处缺陷已修复 |
+| P6 联合验收与本机启动 | 后端/前端/契约全量回归、跨 owner 隔离与脱敏集成测试、本机启动与浏览器体检、主规格归档均已完成；本机验收发现的六处缺陷已修复 |
 
 ## 诊断配置
 
@@ -215,11 +215,12 @@ AIOps 工作区按左（输入、告警、历史）、中（任务卡片、实�
 
 ### P6 实际结果
 
-- 后端全量 `uv run pytest` 收集 361 项，10 项失败均为本地环境既有问题：Milvus 未启动 6 项（`test_chat_sessions_api.py`、`test_stream_rag_chat_api.py`）、`bash` 不可用 1 项（`test_local_development_docs.py`）、本地 `config/project.json` 与 `config/user.project.json` 不符合模板期望 3 项（`test_environment_examples.py`）。未 skip 测试或放宽断言。
+- 后端全量 `uv run pytest` 收集 366 项，仅 1 项失败：`test_local_development_docs.py::test_posix_launcher_has_valid_shell_syntax`，原因是本机 Windows 没有可用的 `/bin/bash`，属环境限制；未 skip 测试或放宽断言。
 - `uv run ruff check .` 报 212 项、`uv run pyright` 报 9 项，全部位于既有模块（`aiops/eval_fixtures.py` 197 项、`aiops/eval_runner.py`、`aiops/evidence_tools.py`、`aiops/catalogs/*`、`tests/test_eval_fixtures.py`、`tests/test_evidence_tools.py`）；本阶段新增与改动文件为 0 项。
 - 前端与共享包：`frontend:typecheck`、`frontend:test`（22 文件 / 93 项）、`frontend:build`、`contracts:typecheck`、契约测试 34 项、`openspec validate --all`（43 项）与 `docs:build` 全部通过。
-- 仓库现状提示：`config/project.json` 与 `config/user.project.json` 曾自基线起被 Git 跟踪，而 README、`.gitignore` 期望与 `test_environment_examples.py` 均要求它们被忽略；该项与诊断功能无关，已在 `69a9600` 取消跟踪并加入 `.gitignore`，本地文件保留。模板内容与本地开发默认值的差异仍待用户确认。
-- 未启动本机服务、未做浏览器桌面/窄屏体检、未发起真实模型或 CLS 请求；主规格同步与归档等待用户授权。
+- 本地配置与脱敏：`config/project.json` 与 `config/user.project.json` 曾自基线起被 Git 跟踪，而 README、`.gitignore` 期望与 `test_environment_examples.py` 均要求它们被忽略；已在 `69a9600` 取消跟踪并加入 `.gitignore`（本地文件保留）。`config/project.template.json` 的 MinIO 默认凭据已在 `5619d1a` 清空；本地 `config/project.json` 的 `llm.apiKey` 已清空，密钥只保留在未跟踪的 `config/user.project.json`，合并结果不变。历史提交中仍存在旧 Key，需在服务商处轮换吊销，不做历史重写。
+- 环境测试已适配本机告警源（`29ea40c`）：不再要求声明 Prometheus 与 Alertmanager 两种源同时存在，改为断言每个已声明源类型合法、`alertsApi` 为 http(s) 且路径与类型匹配，并要求至少存在一个 `alertmanager-v2`。
+- 本机启动与浏览器桌面/窄屏体检见下节；主规格同步与归档已在 `ecd5a34` 完成。本阶段未发起真实模型或 CLS 请求（真实模型参与的是下节本机验收的 Mock 工具链）。
 
 ### P6 本机验收补充（2026-11-01）
 
@@ -228,7 +229,10 @@ AIOps 工作区按左（输入、告警、历史）、中（任务卡片、实�
 - 后端以 Mock 模式 + 固定场景启动，前端 dev server 同机运行；`/health` 返回 200，`/ready` 返回 503 degraded（Milvus 与 Alertmanager 未启动），跨域、登录与 `POST /aiops/diagnostics` 均按契约返回 202。
 - 用 Chromium CDP 驱动真实浏览器在 1600、900、420 三档宽度体检 `/aiops`：桌面为 `288 / 655 / 393` 三栏，窄屏折为单列纵排，三档均无横向溢出；控制台无错误。
 - 端到端链路实测可走通：提交问题与告警 → 202 → `:stream` 增量事件 → 证据链回载 → 报告区渲染；时间线按真实事件显示查询、工具调用、假设更新与评估，报告区按状态显示成功或失败提示，Mock 任务显示“模拟场景”。
-- 真实模型（宿主 `qwen` 系列）参与 Mock 工具链，观测到三处实现缺陷并已修复：
+- 真实模型（宿主 `qwen` 系列）参与 Mock 工具链，观测到下列实现缺陷并已修复：
+  - 工具调用身份在库内冲突：查询记录 ID 原为 `call:<轮>:<序号>`，而 `tool_call_audits.id` 与证据 ID 是全局主键，同一数据库中的第二次诊断必然触发 `UNIQUE constraint failed`。现改为 `<任务 ID>:call:<轮>:<序号>`，并补“同库连续两次诊断互不冲突”的回归测试。
+  - Mock 指标白名单未暴露：Mock 工具按白名单校验指标名，模型却看不到可用指标，因而编造 `latency`、`request_count` 并遭拒绝。现计划提示词附上该服务在本机场景中实际出现的指标白名单。
+  - 评估输出子字段未说明：`evidence_links`、`gaps` 被模型写成字符串数组，结构校验失败。现提示词逐项列出 `evidence_links`（evidence_id/relation/explanation）与 `gaps`（question/why_it_matters）。
   - 证据内容未进入推理提示词：计划、假设与评估提示词只有查询摘要（工具名、问题、状态），模型读不到刚采集的指标数值、日志正文与变更明细，于是“没有可依据的解释”，首轮零假设被判定为初始化失败。现由运行期仓库按 evidence ID 解引用完整记录并写入提示词，原始结果仍不进入 checkpoint 与 working state。
   - 评估输出契约缺字段说明：模型给出 `stop_reason` 枚举外取值（如 `need_more_evidence`），两次结构校验都不通过。提示词现明确列出允许取值与“调查继续时必须为空”的规则。
   - 恢复决策的失败原因未被采纳：核心阶段模型意图中断时，`plan_diagnostic_recovery` 已判定失败，但服务层忽略该原因并继续进入 finalize，可能把中断报告成已收敛。现按恢复设计走执行失败收尾，不重放该意图。
