@@ -16,6 +16,8 @@ defineProps<{
   readonly isRunning: boolean;
   readonly hasTask: boolean;
   readonly taskFailed: boolean;
+  readonly taskCanceled?: boolean;
+  readonly diagnosisMode?: "real" | "mock" | null;
 }>();
 
 function downloadReport(report: AiopsReportDisplay): void {
@@ -36,8 +38,16 @@ function downloadReport(report: AiopsReportDisplay): void {
       <div>
         <p>诊断产物</p>
         <h3>最终诊断报告</h3>
+        <span v-if="report && taskFailed" class="aiops-report__warning">诊断任务失败，报告内容不代表调查成功。</span>
+        <span v-else-if="report && taskCanceled === true" class="aiops-report__warning aiops-report__warning--muted">诊断任务已取消，以下为已保存内容。</span>
       </div>
-      <span v-if="report" class="aiops-report__state aiops-report__state--ready">
+      <span v-if="diagnosisMode === 'mock'" class="aiops-report__state aiops-report__state--mock">
+        模拟场景
+      </span>
+      <span v-if="taskFailed" class="aiops-report__state aiops-report__state--failed">
+        <FileWarning :size="15" aria-hidden="true" />诊断失败
+      </span>
+      <span v-else-if="report" class="aiops-report__state aiops-report__state--ready">
         <FileCheck2 :size="15" aria-hidden="true" />已沉淀
       </span>
       <button v-if="report" class="aiops-report__download" type="button" :title="`下载报告 ${report.title}`" @click="downloadReport(report)">
@@ -95,6 +105,10 @@ function downloadReport(report: AiopsReportDisplay): void {
 .aiops-report__state { align-items: center; border: 1px solid; display: inline-flex; font-size: 0.72rem; font-weight: 700; gap: 0.35rem; min-height: 2rem; padding: 0.25rem 0.55rem; }
 .aiops-report__state--ready { background: var(--status-success-bg); border-color: var(--status-success-border); color: var(--status-success-text); }
 .aiops-report__state--running { background: var(--status-running-bg); border-color: var(--status-running-border); color: var(--status-running-text); }
+.aiops-report__state--failed { background: var(--status-danger-bg); border-color: var(--status-danger-border); color: var(--status-danger-text); }
+.aiops-report__state--mock { background: var(--status-running-bg); border-color: var(--status-running-border); color: var(--status-running-text); }
+.aiops-report__warning { color: var(--status-danger-text); display: block; font-size: 0.72rem; font-weight: 650; line-height: 1.5; margin-top: 0.35rem; }
+.aiops-report__warning--muted { color: var(--text-tertiary); }
 .aiops-report__download { align-items: center; background: var(--surface); border: 1px solid var(--line-strong); color: var(--text-secondary); cursor: pointer; display: inline-flex; font-size: 0.72rem; font-weight: 700; gap: 0.35rem; min-height: 2rem; padding: 0.25rem 0.7rem; transition: background 0.12s, color 0.12s; }
 .aiops-report__download:hover { background: var(--surface-raised); color: var(--text-primary); }
 .aiops-report__document { background: var(--surface-raised); border: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; margin: 0 1.25rem 1.25rem; min-height: 0; min-width: 0; overflow: hidden; }

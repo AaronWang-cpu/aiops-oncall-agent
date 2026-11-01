@@ -10,6 +10,21 @@ const COLLAPSED_LIMIT = 8;
 
 const props = defineProps<{ readonly events: readonly SseEvent[]; readonly isRunning: boolean }>();
 
+/** Chinese labels for the current seven-node engine and the historical phases. */
+const PHASE_LABELS: Record<string, string> = {
+  assess_hypotheses: "评估假设",
+  build_queries: "构建查询",
+  evidence_reasoning: "证据推理",
+  execute_queries: "执行查询",
+  executor: "执行",
+  finalize: "收敛调查",
+  planner: "规划",
+  prepare_context: "准备上下文",
+  report: "生成报告",
+  replanner: "重规划",
+  revise_hypotheses: "调整假设"
+};
+
 const expanded = ref(false);
 
 const visibleEvents = computed(() =>
@@ -31,6 +46,14 @@ function eventLabel(event: SseEvent): string {
   return "诊断流程已完成";
 }
 
+/** Unknown phases keep their raw name instead of being silently dropped. */
+function eventPhase(event: SseEvent): string | null {
+  if (event.type !== "task.status") return null;
+  const phase = event.task.phase;
+  if (phase === undefined) return null;
+  return PHASE_LABELS[phase] ?? phase;
+}
+
 function eventStatus(event: SseEvent): string | null {
   if (event.type === "task.status") return event.task.status;
   if (event.type === "tool.call") return event.toolCall.status;
@@ -49,14 +72,14 @@ function eventIcon(event: SseEvent): typeof LoaderCircle {
 
 <template>
   <section class="aiops-timeline" aria-label="诊断过程">
-    <header><div><p>诊断过程</p><h3>规划、执行、重规划与报告</h3></div><AsyncStatusBadge v-if="isRunning" status="running" compact /></header>
-    <p v-if="events.length === 0" class="aiops-timeline__empty">发起诊断后，这里会按真实事件展示检索、工具调用、重规划和报告。</p>
+    <header><div><p>诊断过程</p><h3>查询、假设、评估与报告</h3></div><AsyncStatusBadge v-if="isRunning" status="running" compact /></header>
+    <p v-if="events.length === 0" class="aiops-timeline__empty">发起诊断后，这里会按真实事件展示查询、工具调用、假设判断和报告。</p>
     <template v-else>
       <button v-if="hiddenCount > 0 && !expanded" class="aiops-timeline__expand" type="button" @click="expanded = true">
         展开全部（还有 {{ hiddenCount }} 条早期事件）
       </button>
       <ol>
-        <li v-for="event in visibleEvents" :key="event.id" :class="`aiops-timeline__event--${event.type.replace('.', '-')}`"><component :is="eventIcon(event)" :size="16" aria-hidden="true" /><div><div class="aiops-timeline__event-header"><strong>{{ eventLabel(event) }}</strong><AsyncStatusBadge v-if="eventStatus(event)" :status="eventStatus(event)" compact /></div><small>{{ new Date(event.timestamp).toLocaleTimeString('zh-CN') }}</small><span v-if="event.type === 'task.status' && event.task.progress !== undefined" class="aiops-timeline__progress"><i :style="{ width: `${event.task.progress}%` }" /></span><small v-if="event.type === 'report'">报告正文已沉淀到报告 Tab。</small></div></li>
+        <li v-for="event in visibleEvents" :key="event.id" :class="`aiops-timeline__event--${event.type.replace('.', '-')}`"><component :is="eventIcon(event)" :size="16" aria-hidden="true" /><div><div class="aiops-timeline__event-header"><strong>{{ eventLabel(event) }}</strong><AsyncStatusBadge v-if="eventStatus(event)" :status="eventStatus(event)" compact /></div><small v-if="eventPhase(event)" class="aiops-timeline__phase">{{ eventPhase(event) }}</small><small>{{ new Date(event.timestamp).toLocaleTimeString('zh-CN') }}</small><span v-if="event.type === 'task.status' && event.task.progress !== undefined" class="aiops-timeline__progress"><i :style="{ width: `${event.task.progress}%` }" /></span><small v-if="event.type === 'report'">报告正文已沉淀到报告区。</small></div></li>
       </ol>
       <button v-if="expanded && hiddenCount > 0" class="aiops-timeline__expand" type="button" @click="expanded = false">
         收起（仅显示最新 {{ COLLAPSED_LIMIT }} 条）
@@ -66,10 +89,11 @@ function eventIcon(event: SseEvent): typeof LoaderCircle {
 </template>
 
 <style scoped>
-.aiops-timeline { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.2rem; }
+.aiops-timeline { min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 1.2rem; }
 header { align-items: center; display: flex; justify-content: space-between; }
 header p { color: var(--text-tertiary); font-size: 0.7rem; font-weight: 700; margin: 0 0 0.3rem; }
-h3 { font-size: 0.95rem; font-weight: 680; margin: 0; }
+h3 { font-size: 0.95rem; font-weight: 680; margin: 0; overflow-wrap: anywhere; }
+.aiops-timeline__phase { color: var(--text-secondary); font-size: 0.7rem; font-weight: 650; }
 .aiops-timeline__empty { color: var(--text-tertiary); font-size: 0.84rem; margin: 1rem 0 0; }
 .aiops-timeline__expand { background: transparent; border: 1px dashed var(--line-strong); color: var(--text-tertiary); cursor: pointer; display: block; font-size: 0.75rem; margin: 0.9rem 0 0; padding: 0.4rem 0.75rem; text-align: left; width: 100%; }
 .aiops-timeline__expand:hover { color: var(--text-primary); }

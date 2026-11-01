@@ -51,12 +51,14 @@ P2 验收边界：本阶段完成持久底座、恢复决策及诊断终态回�
 
 ## 5. P5 前端新旧兼容
 
-- [ ] 5.1 typed client/store 支持 diagnosis 投影和新阶段，历史数据使用原解析；`aiopsStore.test.ts` 覆盖未知/旧节点、不伪造假设、回载错误不展示过时成功结果。
-- [ ] 5.2 aiops parser 保持 error 后消费至 complete、事件 ID 去重与 cursor；client/store 测试覆盖失败有报告、重连重复、无 complete EOF、取消，聊天 SSE 消费行为不变。
-- [ ] 5.3 AiopsEvidenceChain 显示全部合法/未知阶段、假设/关系/依据/缺口，保留默认折叠工具和主区报告；`aiopsComponents.test.ts` 验证旧节点兼容及不重复报告正文。
-- [ ] 5.4 显示事故确认与任务终态的区别、Mock 标签及历史判断局限；组件测试验证 supported 不自动 confirmed、兜底不掩盖 failed、历史未知模式不标真实。
-- [ ] 5.5 保留反馈、手动知识保存、桌面内部滚动及窄屏纵向布局；`aiopsLayout.test.ts` 覆盖无页面横向溢出，真实浏览器验收另须明确授权，不使用伪造生产数据。
-- [ ] 5.6 同步中文界面/使用说明；运行 `npm run frontend:typecheck`、`npm run frontend:test`、`npm run frontend:build`，UI 验收获授权后提供桌面与窄屏截图。
+- [x] 5.1 typed client/store 支持 diagnosis 投影和新阶段，历史数据使用原解析；`aiopsStore.test.ts` 覆盖未知/旧节点、不伪造假设、回载错误不展示过时成功结果。
+- [x] 5.2 aiops parser 保持 error 后消费至 complete、事件 ID 去重与 cursor；client/store 测试覆盖失败有报告、重连重复、无 complete EOF、取消，聊天 SSE 消费行为不变。
+- [x] 5.3 AiopsEvidenceChain 显示全部合法/未知阶段、假设/关系/依据/缺口，保留默认折叠工具和主区报告；`aiopsComponents.test.ts` 验证旧节点兼容及不重复报告正文。
+- [x] 5.4 显示事故确认与任务终态的区别、Mock 标签及历史判断局限；组件测试验证 supported 不自动 confirmed、兜底不掩盖 failed、历史未知模式不标真实。
+- [x] 5.5 保留反馈、手动知识保存、桌面内部滚动及窄屏纵向布局；`aiopsLayout.test.ts` 覆盖无页面横向溢出，真实浏览器验收另须明确授权，不使用伪造生产数据。
+- [x] 5.6 同步中文界面/使用说明；运行 `npm run frontend:typecheck`、`npm run frontend:test`、`npm run frontend:build`，UI 验收获授权后提供桌面与窄屏截图。
+
+P5 验收边界：本阶段完成前端新旧兼容展示、假设与事故结论区分、模拟/失败标识、流去重与游标续读，前端三项命令全部通过（22 文件 / 93 项），并修复基线中两处既有前端失败。三栏工作区把报告移回中间主区域。真实模型/CLS 请求未执行；桌面与窄屏浏览器截图、本机启动验收属于 P6 6.1-6.5，需单独授权。
 
 ## 6. P6 联合验收与规格对齐
 

@@ -12,7 +12,7 @@
 | P2 一致持久化与恢复 | 持久底座和恢复策略验收通过；新图接线仍在 P4 |
 | P3 固定上下文与隔离工具 | 上下文与工具适配器验收通过；七节点调用在 P4 接线 |
 | P4 假设图、预算与报告 | 后端七节点、报告、终态与 SSE 验收通过；旧图已替换 |
-| P5 前端展示与兼容 | 未开始 |
+| P5 前端展示与兼容 | 三栏工作区、假设与事故结论展示、模拟/失败标识、流去重与续读验收通过；浏览器截图在 P6 获取授权后提供 |
 | P6 联合验收与本机启动 | 未开始 |
 
 ## 诊断配置
@@ -183,4 +183,20 @@ Runtime 支持诊断专用 on_termination 回调，统一处理取消、watchdog
 - 新增 `diagnosis_reporting.py`，重写 `diagnostics.py` 为七节点图，`api/app.py` 改用持久终态回调与 `Last-Event-ID` 续读；新增 8 项图闭环测试并迁移旧诊断测试。
 - 目标后端测试通过：`test_diagnosis_graph.py`、迁移后的 `test_aiops_diagnostics.py`，以及 P1-P3 诊断测试；本阶段改动与新增测试的 Ruff、strict Pyright 通过。
 - 端到端（Mock 场景 + 脚本化模型 + 真实 SQLite 仓库）验证：三路采证、两个假设、确认根因、四部分报告、证据链接与 `report/task.status/complete` 顺序；首轮全空返回 failed 且 `stop_reason=null`；一次结构错误被针对性修正，重复非法输出程序失败；取消由 finalizer 一致提交。
-- 未执行真实模型或 CLS 请求，未运行或修改评测数据。前端仍是旧展示，七节点与假设状态的可视化属于 P5。全后端仍有此前代码的既有 Ruff/Pyright 问题（集中在 `aiops/eval_*` 等旧模块），未在本阶段删除测试或放宽 strict。
+- 未执行真实模型或 CLS 请求，未运行或修改评测数据。前端新旧兼容展示记录在下方 P5 章节。全后端仍有此前代码的既有 Ruff/Pyright 问题（集中在 `aiops/eval_*` 等旧模块），未在本阶段删除测试或放宽 strict。
+
+## 前端展示与兼容
+
+AIOps 工作区按左（输入、告警、历史）、中（任务卡片、实时过程、持久报告）、右（证据链、案例库）三栏组织，桌面固定高度、各自内部滚动，窄屏纵向重排且不产生页面横向溢出。
+
+- 右栏执行链展示全部持久步骤：七节点中文标题、历史 `planner/executor/replanner/evidence_reasoning` 兼容标题，未知节点显示原始名称，不过滤。
+- 假设区展示假设状态、依据（支持/反驳/背景）、关键缺口与假设关系；事故结论单独展示，`unconfirmed` 明确显示“具体根因尚未确认”，不把 `supported` 当作事故根因。
+- 判断时效以 `assessment_is_current` 与未分析证据数提示，历史快照与当前内容不混用。
+- 模拟模式显示“模拟场景”标识；历史结果缺失模式时不擅自标注真实。任务 `failed` 即使存在兜底报告也同时显示失败，不改为成功。
+- 流消费按事件 ID 去重并保存游标，`error` 之后继续消费到 `complete`；无 `complete` 的 EOF 回载持久终态并按游标续读一次，不把不完整流当作成功，不重新创建诊断。客户端 `streamDiagnostic` 支持 `Last-Event-ID`，聊天 SSE 消费行为不变。
+
+### P5 实际结果
+
+- 新增 `diagnosis` 投影（`activeDiagnosis`）与流游标、去重、续读逻辑；`aiopsClient.streamDiagnostic` 支持 `Last-Event-ID`；`AiopsEvidenceChain`、`AiopsTimeline`、`AiopsReportPanel`、`AiopsView` 同步七节点与假设展示。
+- 前端 `npm run frontend:typecheck`、`npm run frontend:test`（22 文件 / 93 项）、`npm run frontend:build` 全部通过；修复基线中两处既有前端失败（布局与案例库选择断言）。
+- 未发起真实模型或 CLS 请求，未做浏览器桌面/窄屏验收；截图与本机启动属于 P6，需单独授权。

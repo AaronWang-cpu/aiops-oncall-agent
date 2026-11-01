@@ -15,6 +15,10 @@ import { createApiClient } from "../api/apiClient";
 import { createSseClient } from "../api/sseClient";
 import { API_BASE_URL } from "../config";
 
+export interface StreamDiagnosticOptions {
+  readonly lastEventId?: string;
+}
+
 export interface AiopsClient {
   cancelBackgroundJob?(jobId: string): Promise<BackgroundJob>;
   createDiagnostic(request: CreateAiopsDiagnosticRequest): Promise<AiopsDiagnosticSummary>;
@@ -23,7 +27,10 @@ export interface AiopsClient {
   listDiagnosticCases(): Promise<AiopsDiagnosticCaseListResponse>;
   listDiagnostics(): Promise<AiopsDiagnosticHistoryResponse>;
   saveDiagnosticCase(diagnosticId: string): Promise<SaveAiopsDiagnosticCaseResponse>;
-  streamDiagnostic(diagnosticId: string): AsyncIterable<SseEvent>;
+  streamDiagnostic(
+    diagnosticId: string,
+    options?: StreamDiagnosticOptions
+  ): AsyncIterable<SseEvent>;
 }
 
 export interface CreateAiopsClientOptions {
@@ -58,6 +65,12 @@ export function createAiopsClient(options: CreateAiopsClientOptions = {}): Aiops
       api.request<SaveAiopsDiagnosticCaseResponse>(`/aiops/diagnostics/${diagnosticId}:save-to-knowledge`, {
         method: "POST"
       }),
-    streamDiagnostic: (diagnosticId) => sse.stream(`/aiops/diagnostics/${diagnosticId}:stream`, { method: "POST" })
+    streamDiagnostic: (diagnosticId, options) =>
+      sse.stream(`/aiops/diagnostics/${diagnosticId}:stream`, {
+        method: "POST",
+        ...(options?.lastEventId === undefined
+          ? {}
+          : { headers: { "Last-Event-ID": options.lastEventId } })
+      })
   };
 }

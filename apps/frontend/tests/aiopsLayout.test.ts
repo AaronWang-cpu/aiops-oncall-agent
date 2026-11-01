@@ -11,6 +11,14 @@ const reportPanelSource = readFileSync(
   fileURLToPath(new URL("../src/components/AiopsReportPanel.vue", import.meta.url)),
   "utf8"
 );
+const evidenceChainSource = readFileSync(
+  fileURLToPath(new URL("../src/components/AiopsEvidenceChain.vue", import.meta.url)),
+  "utf8"
+);
+const timelineSource = readFileSync(
+  fileURLToPath(new URL("../src/components/AiopsTimeline.vue", import.meta.url)),
+  "utf8"
+);
 
 describe("AIOps fixed workspace layout", () => {
   it("constrains the desktop workspace and prevents the console from growing with content", () => {
@@ -33,5 +41,22 @@ describe("AIOps fixed workspace layout", () => {
     expect(reportPanelSource).toMatch(
       /\.aiops-report__document > :deep\(\.markdown-content\)\s*\{[^}]*overflow-y:\s*auto;/s
     );
+  });
+
+  it("prevents horizontal page overflow across the diagnosis columns", () => {
+    expect(aiopsViewSource).toMatch(
+      /\.aiops-view__console\s*\{[^}]*grid-template-columns:\s*minmax\(0, [^)]*\)/s
+    );
+    expect(aiopsViewSource).toMatch(/\.aiops-view__left\s*\{[^}]*min-width:\s*0;/s);
+    expect(aiopsViewSource).toMatch(/\.aiops-view__center\s*\{[^}]*min-width:\s*0;/s);
+    expect(aiopsViewSource).toMatch(/\.aiops-view__right\s*\{[^}]*min-width:\s*0;/s);
+    expect(aiopsViewSource).toMatch(/@media \(max-width: 1024px\)/);
+    expect(aiopsViewSource).toMatch(
+      /\.aiops-view__console\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
+    );
+    expect(evidenceChainSource).toMatch(/\.aiops-execution\s*\{[^}]*min-width:\s*0;/s);
+    expect(evidenceChainSource).toMatch(/overflow-wrap:\s*anywhere;/);
+    expect(timelineSource).toMatch(/\.aiops-timeline\s*\{[^}]*min-width:\s*0;/s);
+    expect(timelineSource).toMatch(/\.aiops-timeline\s*\{[^}]*overflow-x:\s*hidden;/s);
   });
 });

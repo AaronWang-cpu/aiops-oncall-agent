@@ -1,4 +1,4 @@
-import { ref, shallowRef } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import { defineStore } from "pinia";
 
 import type {
@@ -7,8 +7,10 @@ import type {
   AiopsDiagnosticEvidenceChain,
   AiopsDiagnosticSummary,
   CreateAiopsDiagnosticRequest,
+  DiagnosisResult,
   SseEvent
 } from "@agent-py/api-contracts";
+import { isDiagnosisResult } from "@agent-py/api-contracts";
 
 import { ApiClientError } from "../api/apiClient";
 import { createAiopsClient, type AiopsClient } from "../aiops/aiopsClient";
@@ -17,8 +19,15 @@ import { toUserFacingError } from "../ui/userFacingError";
 
 let clientFactory: () => AiopsClient = createAiopsClient;
 
+/** The subscription is retried once when it ends without a terminal `complete` event. */
+const DIAGNOSTIC_STREAM_ATTEMPTS = 2;
+
 export function setAiopsClientFactoryForTests(factory: (() => AiopsClient) | null): void {
   clientFactory = factory ?? createAiopsClient;
+}
+
+function isTerminalStatus(status: string): boolean {
+  return status === "succeeded" || status === "failed" || status === "cancelled";
 }
 
 export const useAiopsStore = defineStore("aiops", () => {
@@ -32,10 +41,27 @@ export const useAiopsStore = defineStore("aiops", () => {
   const activeTask = shallowRef<AiopsDiagnosticSummary | null>(null);
   const evidenceChain = shallowRef<AiopsDiagnosticEvidenceChain | null>(null);
   const liveEvents = shallowRef<readonly SseEvent[]>([]);
+  const lastEventId = ref<string | null>(null);
   const isLoading = ref(false);
   const isRunning = ref(false);
   const errorMessage = ref<string | null>(null);
   const savedCaseDocumentId = ref<string | null>(null);
+
+  /**
+   * The new investigation projection. Live `task.status` events take precedence while the
+   * run is streaming; the persisted chain wins once it has been reloaded.
+   */
+  const activeDiagnosis = computed<DiagnosisResult | null>(() => {
+    const persisted = evidenceChain.value?.task.resultPayload.diagnosis;
+    if (persisted !== undefined && isDiagnosisResult(persisted)) return persisted;
+    for (let index = liveEvents.value.length - 1; index >= 0; index -= 1) {
+      const event = liveEvents.value[index];
+      if (event?.type !== "task.status") continue;
+      const streamed = event.task.diagnosis;
+      if (streamed !== undefined && isDiagnosisResult(streamed)) return streamed;
+    }
+    return null;
+  });
 
   function reportError(error: unknown): void {
     const message = toUserFacingError(error);
@@ -46,6 +72,13 @@ export const useAiopsStore = defineStore("aiops", () => {
   function upsertHistory(task: AiopsDiagnosticSummary): void {
     history.value = [task, ...history.value.filter((item) => item.id !== task.id)]
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  }
+
+  function applyChain(chain: AiopsDiagnosticEvidenceChain): void {
+    evidenceChain.value = chain;
+    activeDiagnosticId.value = chain.task.id;
+    activeTask.value = chain.task;
+    upsertHistory(chain.task);
   }
 
   async function reloadHistory(): Promise<void> {
@@ -70,11 +103,93 @@ export const useAiopsStore = defineStore("aiops", () => {
   }
 
   async function loadEvidenceChain(diagnosticId: string): Promise<void> {
-    const chain = await client.getEvidenceChain(diagnosticId);
-    evidenceChain.value = chain;
-    activeDiagnosticId.value = chain.task.id;
-    activeTask.value = chain.task;
-    upsertHistory(chain.task);
+    applyChain(await client.getEvidenceChain(diagnosticId));
+  }
+
+  /**
+   * Consume one subscription pass. Already-seen event IDs are dropped so a replay after
+   * reconnecting never duplicates history, and `error` events do not abort the stream.
+   * Also records the newest event ID as the resume cursor.
+   */
+  async function streamOnce(diagnosticId: string): Promise<boolean> {
+    const seen = new Set(liveEvents.value.map((event) => event.id));
+    let sawComplete = false;
+    const cursor = lastEventId.value;
+    for await (const event of client.streamDiagnostic(
+      diagnosticId,
+      cursor === null ? undefined : { lastEventId: cursor }
+    )) {
+      lastEventId.value = event.id;
+      if (seen.has(event.id)) continue;
+      seen.add(event.id);
+      liveEvents.value = [...liveEvents.value, event];
+      if (event.type === "error") {
+        reportError(new ApiClientError(event.error));
+      }
+      if (event.type === "task.status" && activeTask.value?.id === event.task.id) {
+        const status = event.task.status;
+        if (status !== "queued") {
+          activeTask.value = { ...activeTask.value, status };
+        }
+      }
+      if (event.type === "complete") sawComplete = true;
+    }
+    return sawComplete;
+  }
+
+  /**
+   * Stream the diagnosis and, when the connection ends without `complete`, reload the
+   * persisted state. A still-running task is retried once from the saved cursor; an
+   * incomplete stream is never treated as success.
+   */
+  async function streamWithRecovery(diagnosticId: string): Promise<void> {
+    for (let attempt = 0; attempt < DIAGNOSTIC_STREAM_ATTEMPTS; attempt += 1) {
+      let sawComplete = false;
+      try {
+        sawComplete = await streamOnce(diagnosticId);
+      } catch (error) {
+        reportError(error);
+      }
+      if (sawComplete) return;
+      try {
+        const chain = await client.getEvidenceChain(diagnosticId);
+        applyChain(chain);
+        if (isTerminalStatus(chain.task.status)) return;
+      } catch (error) {
+        reportError(error);
+        return;
+      }
+    }
+  }
+
+  async function refreshCollections(): Promise<void> {
+    await Promise.all([
+      reloadHistory().catch((error: unknown) => reportError(error)),
+      reloadDiagnosticCases().catch((error: unknown) => reportError(error))
+    ]);
+  }
+
+  /** Reload the persisted chain after a run, dropping a stale success if the reload fails. */
+  async function reloadAfterRun(diagnosticId: string): Promise<void> {
+    try {
+      await loadEvidenceChain(diagnosticId);
+    } catch (error) {
+      evidenceChain.value = null;
+      reportError(error);
+    }
+    await refreshCollections();
+  }
+
+  async function reconcileAfterFailure(): Promise<void> {
+    const diagnosticId = activeDiagnosticId.value;
+    if (diagnosticId === null) return;
+    try {
+      await loadEvidenceChain(diagnosticId);
+    } catch (error) {
+      evidenceChain.value = null;
+      reportError(error);
+    }
+    await refreshCollections();
   }
 
   function reset(): void {
@@ -87,6 +202,7 @@ export const useAiopsStore = defineStore("aiops", () => {
     activeTask.value = null;
     evidenceChain.value = null;
     liveEvents.value = [];
+    lastEventId.value = null;
     isLoading.value = false;
     isRunning.value = false;
     errorMessage.value = null;
@@ -104,32 +220,18 @@ export const useAiopsStore = defineStore("aiops", () => {
     isRunning.value = true;
     errorMessage.value = null;
     liveEvents.value = [];
+    lastEventId.value = null;
     evidenceChain.value = null;
     try {
       const created = await client.createDiagnostic(request);
       activeDiagnosticId.value = created.id;
       activeTask.value = created;
       upsertHistory(created);
-      for await (const event of client.streamDiagnostic(created.id)) {
-        liveEvents.value = [...liveEvents.value, event];
-        if (event.type === "error") {
-          reportError(new ApiClientError(event.error));
-        }
-      }
-      await Promise.all([loadEvidenceChain(created.id), reloadHistory(), reloadDiagnosticCases()]);
+      await streamWithRecovery(created.id);
+      await reloadAfterRun(created.id);
     } catch (error) {
       reportError(error);
-      try {
-        if (activeDiagnosticId.value !== null) {
-            await Promise.all([
-              loadEvidenceChain(activeDiagnosticId.value),
-              reloadHistory(),
-              reloadDiagnosticCases()
-            ]);
-        }
-      } catch (reconciliationError) {
-        reportError(reconciliationError);
-      }
+      await reconcileAfterFailure();
     } finally {
       isRunning.value = false;
     }
@@ -151,6 +253,7 @@ export const useAiopsStore = defineStore("aiops", () => {
   return {
     activeDiagnosticId,
     activeAlerts,
+    activeDiagnosis,
     activeTask,
     diagnosticCases,
     alertsErrorMessage,
@@ -160,6 +263,7 @@ export const useAiopsStore = defineStore("aiops", () => {
     history,
     isLoading,
     isRunning,
+    lastEventId,
     liveEvents,
     savedCaseDocumentId,
     initialize: async (): Promise<void> => {
@@ -180,10 +284,12 @@ export const useAiopsStore = defineStore("aiops", () => {
       isLoading.value = true;
       errorMessage.value = null;
       liveEvents.value = [];
+      lastEventId.value = null;
       try {
         await loadEvidenceChain(diagnosticId);
       } catch (error) {
         evidenceChain.value = null;
+        activeTask.value = null;
         reportError(error);
         throw error;
       } finally {

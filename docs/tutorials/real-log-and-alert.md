@@ -44,7 +44,9 @@ uv run python scripts/seed_java_ecommerce_aiops_sops.py --profile java-ecommerce
 1. 打开 `http://127.0.0.1:5173` 并登录。
 2. 进入 **AIOps diagnosis** 页面并刷新活动告警。
 3. 选择任一 `java-ecommerce` 告警并开始诊断。
-4. 等待 Planner、Executor、Replanner、Report 的 SSE 事件结束。
+4. 等待 `prepare_context`、`build_queries`、`execute_queries`、`revise_hypotheses`、`assess_hypotheses`、`finalize`、`report` 七节点的 SSE 事件结束。
+
+成功后，右栏应显示七节点执行链、假设状态与关键缺口，中间区域应沉淀最终报告并标注执行模式；`supported` 只表示单个假设有证据，事故根因是否确认以“事故根因已确认/具体根因尚未确认”为准。
 
 成功证据链必须包括选中告警、同 incident 的 SOP 知识引用，以及通过真实 CLS MCP `SearchLog` 查询到的相同 trace ID 日志。某个工具失败时报告必须如实说明，不得使用其他场景证据填充。
 
