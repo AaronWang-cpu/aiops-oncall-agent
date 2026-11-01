@@ -164,6 +164,12 @@ class McpConnectionService:
             )
         return _client_from_records([record for record in records if record.enabled])
 
+    async def diagnostic_client_for_user(
+        self, *, owner_user_id: str, timeout_seconds: float
+    ) -> LocalMcpClient:
+        client = await self.client_for_user(owner_user_id=owner_user_id)
+        return client.diagnostic_copy(timeout_seconds=timeout_seconds)
+
     def _repository(self) -> McpConnectionRepository:
         repository = self._repositories.mcp_connections
         if repository is None:

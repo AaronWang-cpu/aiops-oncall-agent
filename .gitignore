@@ -14,3 +14,5 @@ coverage/
 *.tsbuildinfo
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+# 本地项目知识是操作者私有内容，只提交空模板
+config/aiops-project-knowledge.yaml

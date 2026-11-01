@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from time import monotonic
 from typing import Protocol, cast
@@ -92,6 +92,18 @@ class QwenOpenAIProvider:
     def create_chat_model(self) -> ChatModel:
         """Create a configured Qwen chat model."""
         return self._model_factory(self._config)
+
+    def create_diagnostic_model(self, *, timeout_seconds: float) -> ChatModel:
+        """The diagnostic policy applies to the underlying SDK, not a retry wrapper."""
+        if timeout_seconds <= 0:
+            raise ValueError("Diagnostic timeout must be positive.")
+        return self._model_factory(
+            replace(
+                self._config,
+                max_retries=0,
+                timeout_seconds=min(timeout_seconds, self._config.timeout_seconds),
+            )
+        )
 
     def create_embedding_model(self) -> EmbeddingModel:
         """Create a configured OpenAI-compatible embedding model."""

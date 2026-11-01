@@ -1,0 +1,14 @@
+# 项目知识模板：复制为本地 config/aiops-project-knowledge.yaml 后再填写。
+#
+# 说明：
+# - 本文件不是应用配置，不会被 aiopsDiagnosis 之外的代码读取；它只作为诊断开始时
+#   读取一次的固定背景知识快照来源（project_overview / services）。
+# - 本地填写后的 config/aiops-project-knowledge.yaml 已被 .gitignore 忽略，请勿提交
+#   真实项目私有知识、日志片段或凭据。
+# - 模板保持为空，不预设任何服务事实；留空的字段会被当作"没有知识"。
+project_overview: ""
+
+services: {}
+  # 示例（请替换为真实内容后再启用）：
+  # order-service:
+  #   description: "负责订单创建、查询与取消；依赖 MySQL 订单库。"

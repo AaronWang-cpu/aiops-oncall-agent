@@ -1,0 +1,205 @@
+{
+  "alert": {
+    "service": "order-service",
+    "instance": "order-service-7c9f4d8b5-hxz2q",
+    "starts_at": "2026-03-18T09:12:00Z",
+    "summary": "订单接口 5 分钟错误率超过 8%，P99 延迟 4.5s 超过 SLO"
+  },
+  "logs": [
+    {
+      "timestamp": "2026-03-18T08:58:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order-service started; datasource order-ds pool maximumPoolSize=20 minimumIdle=5"
+    },
+    {
+      "timestamp": "2026-03-18T09:04:30Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "level": "INFO",
+      "message": "cart-service 灰度切流完成，缓存命中率 98.6%"
+    },
+    {
+      "timestamp": "2026-03-18T09:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-18T09:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available"
+    },
+    {
+      "timestamp": "2026-03-18T09:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "WARN",
+      "message": "GET /api/orders p99=4380ms exceeds SLO 800ms"
+    },
+    {
+      "timestamp": "2026-03-18T09:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - pool recovered, active=8, waiting=0"
+    }
+  ],
+  "metrics": [
+    {
+      "timestamp": "2026-03-18T08:55:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 0.18
+    },
+    {
+      "timestamp": "2026-03-18T09:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 0.41
+    },
+    {
+      "timestamp": "2026-03-18T09:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-18T09:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-18T09:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 0.35
+    },
+    {
+      "timestamp": "2026-03-18T09:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {"endpoint": "/api/orders", "status": "500"},
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-18T09:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {"endpoint": "/api/orders", "status": "500"},
+      "value": 0.086
+    },
+    {
+      "timestamp": "2026-03-18T09:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {"endpoint": "/api/orders", "status": "500"},
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-18T09:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {"endpoint": "/api/orders", "status": "500"},
+      "value": 0.007
+    },
+    {
+      "timestamp": "2026-03-18T09:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 212.0
+    },
+    {
+      "timestamp": "2026-03-18T09:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 4380.0
+    },
+    {
+      "timestamp": "2026-03-18T09:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-18T09:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 235.0
+    },
+    {
+      "timestamp": "2026-03-18T09:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 820.0
+    },
+    {
+      "timestamp": "2026-03-18T09:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 640.0
+    }
+  ],
+  "changes": [
+    {
+      "timestamp": "2026-03-18T07:40:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "change_type": "deployment",
+      "summary": "order-service v4.1.2 发布：优化订单查询 SQL，未调整连接池",
+      "details": {"version": "v4.1.2", "operator": "ci-bot"}
+    },
+    {
+      "timestamp": "2026-03-18T08:54:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "change_type": "config_change",
+      "summary": "order-service 配置变更：spring.datasource.hikari.maximumPoolSize 由 100 调整为 20",
+      "details": {
+        "configKey": "spring.datasource.hikari.maximumPoolSize",
+        "fromValue": "100",
+        "toValue": "20",
+        "operator": "dba-bob"
+      }
+    },
+    {
+      "timestamp": "2026-03-18T09:04:30Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "change_type": "traffic_switch",
+      "summary": "cart-service 灰度切流 10% → 50%",
+      "details": {"fromPercent": "10", "toPercent": "50", "operator": "sre-dan"}
+    }
+  ]
+}

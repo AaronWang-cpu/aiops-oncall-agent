@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from time import monotonic
 from typing import Any, cast
@@ -78,6 +78,76 @@ class LocalMcpClient:
                 )
             ]
         self._connections = tuple(configured)
+
+    def diagnostic_copy(self, *, timeout_seconds: float) -> LocalMcpClient:
+        """Independent policy; never mutate stored connections or chat clients."""
+        if timeout_seconds <= 0:
+            raise ValueError("Diagnostic timeout must be positive.")
+        return LocalMcpClient(
+            connections=[
+                replace(
+                    connection,
+                    retries=0,
+                    timeout_seconds=min(timeout_seconds, connection.timeout_seconds),
+                )
+                for connection in self._connections
+            ]
+        )
+
+    async def call_discovered_tool(
+        self,
+        definition: McpToolDefinition,
+        arguments: dict[str, Any],
+        *,
+        timeout_seconds: float,
+    ) -> Any:
+        """Use a fixed discovered identity, without rediscovery or automatic retry."""
+        matching = [item for item in self._connections if item.name == definition.server_name]
+        if len(matching) != 1 or timeout_seconds <= 0:
+            raise McpClientError("Discovered MCP tool is unavailable.")
+        connection = replace(
+            matching[0],
+            retries=0,
+            timeout_seconds=min(timeout_seconds, matching[0].timeout_seconds),
+        )
+        started_at = monotonic()
+        emit_event(
+            logger, "mcp.tool.started", toolName=definition.name, argumentKeys=sorted(arguments)
+        )
+        try:
+            result = await asyncio.wait_for(
+                self._run_connection(
+                    connection,
+                    lambda session: session.call_tool(
+                        definition.name,
+                        arguments,
+                        read_timeout_seconds=timedelta(seconds=connection.timeout_seconds),
+                    ),
+                ),
+                timeout=connection.timeout_seconds,
+            )
+            if result.isError:
+                raise McpClientError("Diagnostic MCP tool returned an error.")
+        except Exception as exc:
+            emit_event(
+                logger,
+                "mcp.tool.failed",
+                toolName=definition.name,
+                errorCategory=exc.__class__.__name__,
+                durationMs=elapsed_ms(started_at),
+            )
+            raise
+        payload = [
+            {"type": item.type, "text": getattr(item, "text", None)} for item in result.content
+        ]
+        emit_event(
+            logger,
+            "mcp.tool.completed",
+            toolName=definition.name,
+            resultItemCount=len(payload),
+            durationMs=elapsed_ms(started_at),
+        )
+        return payload
 
     async def get_langchain_tools(self) -> list[Any]:
         await self.discover_tools()

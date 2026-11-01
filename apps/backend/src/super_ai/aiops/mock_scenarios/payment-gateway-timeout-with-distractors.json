@@ -1,0 +1,151 @@
+{
+  "alert": {
+    "service": "payment-service",
+    "instance": "payment-service-6d8f7c9b4-tm4rk",
+    "starts_at": "2026-03-19T14:35:00Z",
+    "summary": "支付接口失败率 10 分钟内升至 12%，下游网关超时增多"
+  },
+  "logs": [
+    {
+      "timestamp": "2026-03-19T13:10:00Z",
+      "service": "auth-service",
+      "instance": "auth-service-5f8c7d6b9-zt7qp",
+      "level": "INFO",
+      "message": "identity-provider JWK 轮换完成"
+    },
+    {
+      "timestamp": "2026-03-19T14:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "level": "INFO",
+      "message": "日志采样率调整为 50%"
+    },
+    {
+      "timestamp": "2026-03-19T14:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "订单导出任务 completed, rows=12043"
+    },
+    {
+      "timestamp": "2026-03-19T14:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "level": "ERROR",
+      "message": "POST /api/pay failed: GatewayTimeout calling external-payment-gateway (configured timeout=3000ms)"
+    },
+    {
+      "timestamp": "2026-03-19T14:32:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-9qx4v",
+      "level": "ERROR",
+      "message": "POST /api/pay upstream returned 502 from external-payment-gateway"
+    },
+    {
+      "timestamp": "2026-03-19T14:38:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "level": "INFO",
+      "message": "retry queue drained, pending=0"
+    },
+    {
+      "timestamp": "2026-03-19T14:52:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "level": "ERROR",
+      "message": "POST /api/pay failed: GatewayTimeout calling external-payment-gateway"
+    }
+  ],
+  "metrics": [
+    {
+      "timestamp": "2026-03-19T14:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_error_rate",
+      "labels": {"endpoint": "/api/pay", "status": "502"},
+      "value": 0.03
+    },
+    {
+      "timestamp": "2026-03-19T14:36:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_error_rate",
+      "labels": {"endpoint": "/api/pay", "status": "502"},
+      "value": 0.124
+    },
+    {
+      "timestamp": "2026-03-19T14:44:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_error_rate",
+      "labels": {"endpoint": "/api/pay", "status": "502"},
+      "value": 0.108
+    },
+    {
+      "timestamp": "2026-03-19T14:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {"gateway": "external-payment-gateway"},
+      "value": 2.0
+    },
+    {
+      "timestamp": "2026-03-19T14:36:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {"gateway": "external-payment-gateway"},
+      "value": 57.0
+    },
+    {
+      "timestamp": "2026-03-19T14:44:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {"gateway": "external-payment-gateway"},
+      "value": 61.0
+    },
+    {
+      "timestamp": "2026-03-19T14:36:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_latency_p99",
+      "labels": {"endpoint": "/api/pay"},
+      "value": 3180.0
+    },
+    {
+      "timestamp": "2026-03-19T14:44:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "metric_name": "payment_latency_p99",
+      "labels": {"endpoint": "/api/pay"},
+      "value": 3060.0
+    }
+  ],
+  "changes": [
+    {
+      "timestamp": "2026-03-19T13:20:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "change_type": "traffic_switch",
+      "summary": "cart-service 灰度切流 10% → 50%",
+      "details": {"fromPercent": "10", "toPercent": "50", "operator": "sre-dan"}
+    },
+    {
+      "timestamp": "2026-03-19T14:26:00Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-84b7f6c5d-lg9ws",
+      "change_type": "deployment",
+      "summary": "fraud-detection-service v1.8.0 发布：引入新的风控规则链",
+      "details": {"version": "v1.8.0", "operator": "ci-bot", "risk": "high"}
+    },
+    {
+      "timestamp": "2026-03-19T14:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "change_type": "config_change",
+      "summary": "payment-service 配置变更：logging.sample_rate 由 10% 调整为 50%",
+      "details": {"configKey": "logging.sample_rate", "fromValue": "0.1", "toValue": "0.5", "operator": "alice"}
+    }
+  ]
+}

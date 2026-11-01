@@ -42,12 +42,7 @@ class FakeAsyncEmbeddingClient:
 
     async def create(self, *, input: list[str], **_kwargs: object) -> dict[str, object]:
         self.inputs.append(input)
-        return {
-            "data": [
-                {"embedding": [float(text.removeprefix("text-"))]}
-                for text in input
-            ]
-        }
+        return {"data": [{"embedding": [float(text.removeprefix("text-"))]} for text in input]}
 
 
 def test_loads_tracked_qwen_defaults() -> None:
@@ -108,9 +103,7 @@ def test_merges_user_project_config_file(tmp_path: Path) -> None:
                     "apiKey": "merged-secret",
                     "chatModel": "merged-chat",
                     "embeddingModel": "merged-embedding",
-                    "modelCapabilities": {
-                        "merged-chat": {"contextWindowTokens": 262144}
-                    },
+                    "modelCapabilities": {"merged-chat": {"contextWindowTokens": 262144}},
                 }
             }
         ),
@@ -243,6 +236,71 @@ def test_provider_source_does_not_import_dashscope() -> None:
     source = "\n".join(path.read_text(encoding="utf-8") for path in source_root.glob("*.py"))
 
     assert "dashscope" not in source.lower()
+
+
+# ---------- 诊断专用模型：独立策略，不影响聊天模型 ----------
+
+
+def test_diagnostic_model_disables_retries_and_clamps_timeout() -> None:
+    config = load_llm_provider_config()
+    captured: dict[str, object] = {}
+
+    def fake_factory(factory_config: object) -> FakeChatModel:
+        captured["config"] = factory_config
+        return FakeChatModel()
+
+    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+
+    provider.create_diagnostic_model(timeout_seconds=45)
+
+    diagnostic_config = cast(Any, captured["config"])
+    assert diagnostic_config.max_retries == 0
+    assert diagnostic_config.timeout_seconds == 45.0
+    assert diagnostic_config is not config
+    assert config.max_retries == 2
+    assert config.timeout_seconds == 120.0
+
+
+def test_diagnostic_model_never_exceeds_configured_timeout() -> None:
+    config = load_llm_provider_config()
+    captured: list[object] = []
+
+    def fake_factory(factory_config: object) -> FakeChatModel:
+        captured.append(factory_config)
+        return FakeChatModel()
+
+    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+
+    provider.create_diagnostic_model(timeout_seconds=600)
+
+    assert cast(Any, captured[0]).timeout_seconds == config.timeout_seconds
+
+
+@pytest.mark.parametrize("timeout_seconds", [0, -1])
+def test_diagnostic_model_rejects_non_positive_timeout(timeout_seconds: float) -> None:
+    config = load_llm_provider_config()
+    provider = QwenOpenAIProvider(config=config, model_factory=lambda _: FakeChatModel())
+
+    with pytest.raises(ValueError, match="positive"):
+        provider.create_diagnostic_model(timeout_seconds=timeout_seconds)
+
+
+def test_chat_model_keeps_configured_retries_after_diagnostic_use() -> None:
+    config = load_llm_provider_config()
+    captured: list[object] = []
+
+    def fake_factory(factory_config: object) -> FakeChatModel:
+        captured.append(factory_config)
+        return FakeChatModel()
+
+    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+
+    provider.create_diagnostic_model(timeout_seconds=30)
+    provider.create_chat_model()
+
+    assert cast(Any, captured[0]).max_retries == 0
+    assert cast(Any, captured[1]) is config
+    assert config.max_retries == 2
 
 
 def _write_config(
