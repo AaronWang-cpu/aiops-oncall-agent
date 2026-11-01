@@ -44,6 +44,10 @@ class LlmProvider(Protocol):
         """Create a configured chat model."""
         ...
 
+    def create_diagnostic_model(self, *, timeout_seconds: float) -> ChatModel:
+        """Create an isolated diagnostic model without SDK-level retries."""
+        ...
+
     def create_embedding_model(self) -> EmbeddingModel:
         """Create a configured embedding model."""
         ...

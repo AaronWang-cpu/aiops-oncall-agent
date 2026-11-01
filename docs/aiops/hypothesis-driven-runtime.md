@@ -11,7 +11,7 @@
 | P1 业务模型、共享契约和配置 | 阶段验收通过；未切换诊断入口 |
 | P2 一致持久化与恢复 | 持久底座和恢复策略验收通过；新图接线仍在 P4 |
 | P3 固定上下文与隔离工具 | 上下文与工具适配器验收通过；七节点调用在 P4 接线 |
-| P4 假设图、预算与报告 | 未开始 |
+| P4 假设图、预算与报告 | 后端七节点、报告、终态与 SSE 验收通过；旧图已替换 |
 | P5 前端展示与兼容 | 未开始 |
 | P6 联合验收与本机启动 | 未开始 |
 
@@ -136,6 +136,38 @@ uv run pytest tests/test_diagnosis_context.py tests/test_diagnosis_tools.py test
 - 真实入口只使用当前 owner 已发现的工具身份，单次调用、无自动重试、无 Mock 回退；能力缺失返回未满足需求。
 - 未执行真实模型或 CLS 请求，也未运行或修改评测数据；旧诊断默认入口仍为旧图，七节点调用在 P4 接线。
 
+## 七节点执行与预算
+
+诊断由持久后台任务执行，LangGraph 只负责路由，持久事实仍由 Repository 事务提交：
+
+```text
+START（恢复条件边）→ prepare_context → build_queries → execute_queries
+→ revise_hypotheses → assess_hypotheses → 条件分支 build_queries / revise_hypotheses / finalize
+→ report → END
+```
+
+- `prepare_context` 固定模式、知识与目录快照及可用工具，不重新读取文件。
+- `build_queries` 输出可执行调用与未满足需求；双空计划非法，超额不静默裁剪；参数按模式补齐（日志从告警服务与窗口启动，指标按目录白名单，变更使用告警服务与一级依赖），未知参数按非法输出处理。
+- `execute_queries` 先在同一事务保存调用 intent 与实际发起计数，再并发请求（并发取批次、预算与剩余额度最小值；剩余时间不足时退化为串行），返回后逐个提交终态审计、完整证据与查询记录。单次失败不影响其他调用，也不写未发起的查询记录。
+- `revise_hypotheses` 只返回增量：新增项由程序分配 ID，细化项保留 ID 并重置为待评估，同时失效当前关系与结论。
+- `assess_hypotheses` 覆盖全部当前假设，完整替换关系并给出事故结论与下一动作；最后分析阶段只能收尾。
+- `finalize` 把未决假设转为 unresolved 并确定终态：确认根因为 succeeded，正常预算结束为 succeeded，关键数据不可用为 succeeded，初始化未完成或核心执行失败为 failed，停止原因只在真实适用时填写。
+- 首轮全部失败或全部空业务结果不生成假设，直接程序收尾；有数据但空假设增量按初始化未完成处理。
+
+预算继续使用 5 轮 / 20 次调用 / 两次内部往返 / 4 并发与 390/450/480 秒边界：额度耗尽不会跳过最后一批分析，内部额度耗尽不禁有效的新查询，截止时间按 UTC 绝对期限执行且恢复不重置。
+
+## 报告与 SSE
+
+报告由程序头部与四部分正文组成：`## 诊断结论`、`## 原因与证据`、`## 调查结果与局限`、`## 后续建议`。头部固定结论状态、停止原因、判断时效、执行模式与生成时间；正文优先使用模型输出，无效、为空或与已确认结论冲突时改用程序兜底，报告不首次补出未验证的因果链，也不执行处置。Mock 报告显式标注“模拟场景”。
+
+终态在同一事务内保存任务、job、报告、证据链接与终止事件，顺序为：
+
+```text
+report → （仅整次失败时 error）→ task.status → complete
+```
+
+SSE 使用持久事件 ID 作为 `id:` 行与 JSON `id`，sequence 唯一；`POST /aiops/diagnostics/{id}:stream` 支持 `Last-Event-ID` 续读，缺省从头读取，游标必须属于该用户与该 job；缺 `complete` 视为不完整流，订阅层不再临时合成终止事件。聊天 SSE 行为不变。
+
 ## 持久恢复边界
 
 checkpoint 保存 runtime、working_state 和 last_valid_assessment；原始工具结果仅存证据，通过当前用户、当前任务的引用回载完整数据，不用摘要恢复推理。
@@ -144,4 +176,11 @@ checkpoint 保存 runtime、working_state 和 last_valid_assessment；原始工�
 
 `plan_diagnostic_recovery` 仅分类已保存阶段和中断状态，不调用模型或工具。已提交节点从 next_node 继续；核心模型意图中断进入程序失败收尾，报告模型中断使用程序兜底。UTC 截止和已保存剩余时间不重置，停机等待扣除预算，390/450/480 秒之后仅允许对应阶段工作。
 
-Runtime 支持诊断专用 on_termination 回调，统一处理取消、watchdog 超时及未提交终态的 handler 返回；不会覆盖已提交诊断终态。终态持久化不可用时保留可恢复 job，不单独宣布成功。回调和恢复策略接入新七节点及最终 Markdown 生成属于 P4，当前默认入口仍为旧图。
+Runtime 支持诊断专用 on_termination 回调，统一处理取消、watchdog 超时及未提交终态的 handler 返回；不会覆盖已提交诊断终态。终态持久化不可用时保留可恢复 job，不单独宣布成功。`aiops_diagnosis` 已注册该回调，默认入口改为假设驱动诊断。
+
+### P4 实际结果
+
+- 新增 `diagnosis_reporting.py`，重写 `diagnostics.py` 为七节点图，`api/app.py` 改用持久终态回调与 `Last-Event-ID` 续读；新增 8 项图闭环测试并迁移旧诊断测试。
+- 目标后端测试通过：`test_diagnosis_graph.py`、迁移后的 `test_aiops_diagnostics.py`，以及 P1-P3 诊断测试；本阶段改动与新增测试的 Ruff、strict Pyright 通过。
+- 端到端（Mock 场景 + 脚本化模型 + 真实 SQLite 仓库）验证：三路采证、两个假设、确认根因、四部分报告、证据链接与 `report/task.status/complete` 顺序；首轮全空返回 failed 且 `stop_reason=null`；一次结构错误被针对性修正，重复非法输出程序失败；取消由 finalizer 一致提交。
+- 未执行真实模型或 CLS 请求，未运行或修改评测数据。前端仍是旧展示，七节点与假设状态的可视化属于 P5。全后端仍有此前代码的既有 Ruff/Pyright 问题（集中在 `aiops/eval_*` 等旧模块），未在本阶段删除测试或放宽 strict。

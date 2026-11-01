@@ -9,14 +9,14 @@ import json
 import logging
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from time import monotonic
 from typing import Annotated, Literal, Protocol, cast
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,7 +28,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
-from super_ai.aiops import AiopsDiagnosticService, DiagnosisCasePersistor
+from super_ai.aiops import AiopsDiagnosticService
+from super_ai.aiops.diagnosis_config import load_diagnosis_config
 from super_ai.alerts import (
     ActiveAlert,
     ActiveAlertProvider,
@@ -67,10 +68,9 @@ from super_ai.documents import (
     chunk_document_text,
     extract_indexable_text,
 )
-from super_ai.error_catalog import ERROR_DEFINITIONS
 from super_ai.feedback import FeedbackError, UserFeedbackService
 from super_ai.foundation import get_foundation_info
-from super_ai.jobs import BackgroundJobContext, BackgroundJobRuntime, JobCancelled
+from super_ai.jobs import BackgroundJobContext, BackgroundJobRuntime
 from super_ai.llm import (
     EmbeddingModel,
     LlmProvider,
@@ -214,13 +214,14 @@ class McpConnectionMutationRequest(BaseModel):
 
 
 class AiopsDiagnosticRunner(Protocol):
-    def stream(
-        self,
-        *,
-        task: DiagnosticTaskRecord,
-        accessible_knowledge_base_ids: Sequence[str],
-    ) -> AsyncIterator[dict[str, object]]:
-        """Stream one persisted AIOps diagnostic execution."""
+    async def run(self, context: BackgroundJobContext) -> None:
+        """Run or resume the durable investigation for the leased job."""
+        ...
+
+    async def terminate(
+        self, context: BackgroundJobContext, status: Literal["failed", "cancelled"], reason: str
+    ) -> None:
+        """Commit a durable terminal without new model or tool calls."""
         ...
 
 
@@ -349,7 +350,11 @@ def create_app(
         raise RuntimeError("Background job repository is required.")
     background_runtime = BackgroundJobRuntime(repositories.background_jobs)
     background_runtime.register("document_index", _document_index_job_handler(app))
-    background_runtime.register("aiops_diagnosis", _aiops_job_handler(app))
+    background_runtime.register(
+        "aiops_diagnosis",
+        _aiops_job_handler(app),
+        on_termination=_aiops_job_termination(app),
+    )
     app.state.background_job_runtime = background_runtime
     app.state.index_task_scheduler = index_task_scheduler or DurableDocumentIndexTaskScheduler(app)
     app.state.request_metrics = RequestMetrics()
@@ -1570,6 +1575,7 @@ def create_app(
         request: Request,
         diagnostic_id: str,
         user: Annotated[UserRecord, Depends(_current_user)],
+        last_event_id: Annotated[str | None, Header(alias="Last-Event-ID")] = None,
     ) -> StreamingResponse:
         task = await _memory_repositories(request).diagnostics.get_task(
             owner_user_id=user.id,
@@ -1585,11 +1591,13 @@ def create_app(
         )
         if job is None:
             raise ApiErrorException("BUSINESS_NOT_FOUND")
+        after_sequence = await _resolve_stream_cursor(
+            repository, owner_user_id=user.id, job_id=job.id, last_event_id=last_event_id
+        )
         await _background_job_runtime(request).start()
 
         async def event_stream() -> AsyncIterator[str]:
-            sequence = 0
-            error_emitted = False
+            sequence = after_sequence
             while True:
                 events = await repository.list_events(
                     owner_user_id=user.id,
@@ -1598,14 +1606,12 @@ def create_app(
                 )
                 for stored in events:
                     sequence = stored.sequence
-                    error_emitted = error_emitted or stored.payload.get("type") == "error"
-                    yield encode_sse(stored.payload)
+                    # 持久事件 ID 同时作为 SSE id 行，重连可据此续读。
+                    yield encode_sse(stored.payload, event_id=str(stored.payload.get("id") or ""))
                 current = await repository.get(owner_user_id=user.id, job_id=job.id)
                 if current is None:
                     return
                 if current.status in {"succeeded", "failed", "cancelled"} and not events:
-                    if current.status == "failed" and not error_emitted:
-                        yield encode_sse(_background_job_error_event())
                     return
                 await asyncio.sleep(0.1)
 
@@ -1762,37 +1768,22 @@ def _aiops_job_handler(
     app: FastAPI,
 ) -> Callable[[BackgroundJobContext], Awaitable[None]]:
     async def handle(context: BackgroundJobContext) -> None:
-        repositories = cast(MemoryRepositories, app.state.memory_repositories)
-        task = await repositories.diagnostics.get_task(
-            owner_user_id=context.job.owner_user_id,
-            task_id=context.job.resource_id,
-        )
-        if task is None:
-            raise RuntimeError("Diagnostic task is unavailable.")
         runner = _aiops_diagnostic_runner(_request_for_app(app))
-        try:
-            async for event in runner.stream(
-                task=task,
-                accessible_knowledge_base_ids=(f"kb_{context.job.owner_user_id}",),
-            ):
-                await context.raise_if_cancelled()
-                await context.append_event(event)
-        except JobCancelled:
-            await repositories.diagnostics.update_task(
-                owner_user_id=task.owner_user_id,
-                task_id=task.id,
-                status="cancelled",
-                completed_at=datetime.now(timezone.utc),
-            )
-            raise
-        updated = await repositories.diagnostics.get_task(
-            owner_user_id=task.owner_user_id,
-            task_id=task.id,
-        )
-        if updated is None or updated.status == "failed":
-            raise RuntimeError("Diagnostic execution failed.")
+        await runner.run(context)
 
     return handle
+
+
+def _aiops_job_termination(
+    app: FastAPI,
+) -> Callable[[BackgroundJobContext, Literal["failed", "cancelled"], str], Awaitable[None]]:
+    async def finalize(
+        context: BackgroundJobContext, status: Literal["failed", "cancelled"], reason: str
+    ) -> None:
+        runner = _aiops_diagnostic_runner(_request_for_app(app))
+        await runner.terminate(context, status, reason)
+
+    return finalize
 
 
 def _request_for_app(app: FastAPI) -> Request:
@@ -1845,20 +1836,21 @@ def _background_job_payload(job: BackgroundJobRecord) -> dict[str, object]:
     }
 
 
-def _background_job_error_event() -> dict[str, object]:
-    category, http_status, message = ERROR_DEFINITIONS["SYSTEM_INTERNAL_ERROR"]
-    return {
-        "id": f"evt_{uuid4().hex}",
-        "type": "error",
-        "channel": "aiops",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "error": {
-            "code": "SYSTEM_INTERNAL_ERROR",
-            "category": category,
-            "httpStatus": http_status,
-            "message": message,
-        },
-    }
+async def _resolve_stream_cursor(
+    repository: BackgroundJobRepository,
+    *,
+    owner_user_id: str,
+    job_id: str,
+    last_event_id: str | None,
+) -> int:
+    """Resume after a persisted event that must belong to this user and job."""
+    if not last_event_id:
+        return 0
+    events = await repository.list_events(owner_user_id=owner_user_id, job_id=job_id)
+    for stored in events:
+        if stored.payload.get("id") == last_event_id:
+            return stored.sequence
+    raise ApiErrorException("BUSINESS_NOT_FOUND")
 
 
 def _user_feedback_payload(record: UserFeedbackRecord) -> dict[str, object]:
@@ -2166,7 +2158,6 @@ def _active_alert_provider(request: Request) -> ActiveAlertProvider:
 def _aiops_diagnostic_runner(request: Request) -> AiopsDiagnosticRunner:
     runner = cast(AiopsDiagnosticRunner | None, request.app.state.aiops_diagnostic_runner)
     if runner is None:
-        _initialize_vector_store(request)
         cls_log_config = project_config_section(
             "clsLogUpload",
             config_path=request.app.state.project_config_path,
@@ -2174,18 +2165,10 @@ def _aiops_diagnostic_runner(request: Request) -> AiopsDiagnosticRunner:
         runner = AiopsDiagnosticService(
             repositories=_memory_repositories(request),
             llm_provider=_llm_provider(request),
-            retrieval_tool=KnowledgeRetrievalTool(
-                embedding_model=_embedding_model(request),
-                vector_store=cast(RetrievalVectorStore, _vector_store(request)),
-                rerank_model=_rerank_model(request),
-            ),
-            mcp_client_provider=_mcp_connection_service(request),
+            config=load_diagnosis_config(request.app.state.project_config_path),
             cls_region=required_str(cls_log_config, "region"),
             cls_topic_id=required_str(cls_log_config, "topicId"),
-            case_persistor=DiagnosisCasePersistor(
-                repositories=_memory_repositories(request),
-                index_task_scheduler=_index_task_scheduler(request),
-            ),
+            mcp_client_provider=_mcp_connection_service(request),
         )
         request.app.state.aiops_diagnostic_runner = runner
     return runner

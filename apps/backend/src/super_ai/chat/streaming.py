@@ -784,10 +784,17 @@ def _jsonable(value: object) -> object:
     return str(value)
 
 
-def encode_sse(event: Mapping[str, object]) -> str:
-    """Encode a shared SSE event payload as one text/event-stream frame."""
+def encode_sse(event: Mapping[str, object], *, event_id: str | None = None) -> str:
+    """Encode a shared SSE event payload as one text/event-stream frame.
+
+    ``event_id`` adds the SSE ``id:`` line used for ``Last-Event-ID`` resume.
+    Chat frames keep the default (no id line) so its parser is unchanged.
+    """
     event_type = str(event["type"])
-    return f"event: {event_type}\ndata: {json.dumps(event, separators=(',', ':'))}\n\n"
+    frame = ""
+    if event_id:
+        frame += f"id: {event_id}\n"
+    return frame + f"event: {event_type}\ndata: {json.dumps(event, separators=(',', ':'))}\n\n"
 
 
 def _sse_event(event_type: str, payload: Mapping[str, object]) -> dict[str, object]:

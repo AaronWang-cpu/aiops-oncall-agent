@@ -1,8 +1,13 @@
+"""AIOps 诊断的 HTTP/SSE 契约、案例库权限与证据作用域回归。
+
+旧 SOP-first 图的行为已由假设驱动诊断替换，相关断言迁移到
+`test_diagnosis_graph.py`（图闭环）与 `test_diagnosis_tools.py`（参数与筛选）。
+本文件保留仍然适用的 API、所有权和存储作用域断言。
+"""
+
 from __future__ import annotations
 
 import json
-import logging
-from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, cast
@@ -12,485 +17,248 @@ import pytest
 from alembic import command
 from alembic.config import Config
 
-from super_ai.aiops import AiopsDiagnosticService, DiagnosisCasePersistor
+from super_ai.aiops.diagnosis_config import DiagnosisConfig
+from super_ai.aiops.diagnostics import AiopsDiagnosticService
 from super_ai.api.app import AiopsDiagnosticRunner, create_app
-from super_ai.llm import LlmProvider, RerankResult
-from super_ai.mcp_client import LocalMcpClient, McpClientError, McpToolDefinition
 from super_ai.memory.database import create_memory_engine, create_memory_session_factory
-from super_ai.memory.repositories import DiagnosticTaskRecord, TenantScopeError
+from super_ai.memory.repositories import TenantScopeError
 from super_ai.memory.sqlite import create_sqlite_memory_repositories
-from super_ai.retrieval import KnowledgeRetrievalTool
-from super_ai.vector_store import StoredVectorChunk, VectorSearchResult
 
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+SCENARIO_DIR = BACKEND_ROOT / "src" / "super_ai" / "aiops" / "mock_scenarios"
 
-class FakeEmbeddingModel:
-    def __init__(self) -> None:
-        self.inputs: list[list[str]] = []
+PLAN: dict[str, object] = {
+    "calls": [
+        {
+            "hypothesis_ids": [],
+            "question": "订单服务窗口内有哪些错误日志？",
+            "tool_name": "SearchLog",
+            "arguments": {"service": "order-service"},
+        }
+    ],
+    "unmet_requests": [],
+}
 
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
-        self.inputs.append(texts)
-        return [[0.1, 0.2] for _ in texts]
+REVISION: dict[str, object] = {
+    "new_hypotheses": [{"statement": "订单服务连接池耗尽导致接口报错"}],
+    "revised_hypotheses": [],
+}
 
+ASSESSMENT: dict[str, object] = {
+    "hypothesis_assessments": [
+        {
+            "hypothesis_id": "H1",
+            "hypothesis_status": "supported",
+            "assessment": "错误日志显示连接等待超时。",
+            "evidence_links": [
+                {
+                    "evidence_id": "evidence:call:1:0",
+                    "relation": "supports",
+                    "explanation": "日志给出等待连接超时。",
+                }
+            ],
+            "gaps": [],
+        }
+    ],
+    "hypothesis_relations": [],
+    "incident_conclusion": {
+        "conclusion_status": "unconfirmed",
+        "root_cause": None,
+        "stop_reason": "budget_exhausted",
+        "explanation": "证据支持症状，但未解释耗尽机制。",
+    },
+    "next_step": {"action": "finalize", "reason": "已有结论。", "requests": []},
+}
 
-class FakeVectorStore:
-    def __init__(self, hits: list[VectorSearchResult]) -> None:
-        self.hits = hits
+REPORT_BODY = """## 诊断结论
 
-    def search_chunks(
-        self,
-        *,
-        query_vector: Sequence[float],
-        tenant_id: str,
-        knowledge_base_ids: Sequence[str],
-        limit: int,
-    ) -> list[VectorSearchResult]:
-        return list(self.hits[:limit])
+本次调查未确认事故根本原因。
 
-    def list_chunks(
-        self,
-        *,
-        tenant_id: str,
-        knowledge_base_ids: Sequence[str],
-    ) -> list[StoredVectorChunk]:
-        return [
-            StoredVectorChunk(
-                chunk_id=hit.chunk_id,
-                document_id=hit.document_id,
-                knowledge_base_id=hit.knowledge_base_id,
-                owner_user_id=hit.owner_user_id,
-                tenant_id=hit.tenant_id,
-                content=hit.content,
-                source=hit.source,
-                created_at=hit.created_at,
-                metadata=hit.metadata,
-            )
-            for hit in self.hits
-        ]
+## 原因与证据
 
+日志显示连接等待超时。
 
-class FakeRerankModel:
-    async def arerank(
-        self, *, query: str, documents: Sequence[str], top_n: int
-    ) -> list[RerankResult]:
-        return [
-            RerankResult(index=index, relevance_score=0.95 - index / 100)
-            for index in range(min(top_n, len(documents)))
-        ]
+## 调查结果与局限
 
+未取得能解释耗尽机制的证据。
 
-REPORT_MARKDOWN = """# 告警分析报告
+## 后续建议
 
----
-
-## 📋 活跃告警清单
-
-| 告警名称 | 级别 | 目标服务 | 首次触发时间 | 最新触发时间 | 状态 |
-|---|---|---|---|---|---|
-| WorkerCpuHigh | critical | worker | 未获取 | 未获取 | 活跃 |
-
----
-
-## 🔍 告警根因分析1 - WorkerCpuHigh
-
-### 告警详情
-- **告警级别**: critical
-
-### 日志证据
-- SearchLog 返回 cpu_pressure
-
-### 根因结论
-证据支持 CPU 压力症状，但不足以确认最终根因。
-
----
-
-## 🛠️ 处理方案执行1 - WorkerCpuHigh
-
-### 已执行的排查步骤
-1. 查询 CLS 日志
-
-### 处理建议
-依据 SOP 继续检查 CPU 饱和度。
-
-### 预期效果
-确认 CPU 压力来源。
-
----
-
-## 📊 结论
-
-### 整体评估
-存在需要继续核实的 CPU 压力告警。
-
-### 关键发现
-- CLS 返回 cpu_pressure 证据。
-
-### 后续建议
-1. 补充 CPU 指标。
-
-### 风险评估
-当前风险较高，但影响范围尚未获取。"""
-
-
-class FakeChatModel:
-    def __init__(
-        self,
-        *,
-        report_response: str = f"```markdown\n{REPORT_MARKDOWN}\n```",
-        report_error: Exception | None = None,
-    ) -> None:
-        self.report_response = report_response
-        self.report_error = report_error
-        self.inputs: list[object] = []
-
-    async def ainvoke(self, input: object) -> object:
-        self.inputs.append(input)
-        if "AIOps 诊断报告生成器" in str(input):
-            if self.report_error is not None:
-                raise self.report_error
-            return self.report_response
-        return '{"steps": []}'
-
-
-class FakeLlmProvider:
-    def __init__(
-        self,
-        *,
-        report_response: str = f"```markdown\n{REPORT_MARKDOWN}\n```",
-        report_error: Exception | None = None,
-    ) -> None:
-        self.chat_model = FakeChatModel(
-            report_response=report_response,
-            report_error=report_error,
-        )
-
-    def create_chat_model(self) -> FakeChatModel:
-        return self.chat_model
-
-    def create_embedding_model(self) -> FakeEmbeddingModel:
-        return FakeEmbeddingModel()
-
-    async def check_readiness(self) -> object:
-        return object()
-
-
-class FakeMcpClient:
-    def __init__(self, *, error: Exception | None = None) -> None:
-        self.error = error
-        self.calls: list[tuple[str, dict[str, Any]]] = []
-
-    async def discover_tools(self) -> list[McpToolDefinition]:
-        return [McpToolDefinition("SearchLog", "Search real logs", {})]
-
-    async def call_tool(self, name: str, arguments: dict[str, Any]) -> object:
-        self.calls.append((name, arguments))
-        if self.error is not None:
-            raise self.error
-        return [
-            {
-                "type": "text",
-                "text": json.dumps(
-                    [
-                        {
-                            "LogJson": json.dumps(
-                                {
-                                    "timestamp": "2026-07-11T06:00:00Z",
-                                    "level": "ERROR",
-                                    "service": "worker",
-                                    "event": "cpu_pressure",
-                                    "message": "Worker CPU exceeded threshold",
-                                    "latency_ms": "2450",
-                                    "secret": "must-not-enter-report-context",
-                                }
-                            )
-                        }
-                    ]
-                ),
-            }
-        ]
-
-
-class FakeCaseIndexScheduler:
-    def __init__(self) -> None:
-        self.scheduled: list[tuple[str, str]] = []
-
-    def schedule(self, *, owner_user_id: str, task_id: str) -> None:
-        self.scheduled.append((owner_user_id, task_id))
-
-
-@pytest.mark.asyncio
-async def test_diagnostic_runs_sop_first_persists_evidence_and_audits(
-    migrated_database_url: str,
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    logging.getLogger("super_ai.aiops.diagnostics").disabled = False
-    caplog.set_level(logging.INFO, logger="super_ai.aiops.diagnostics")
-    engine = create_memory_engine(migrated_database_url)
-    try:
-        repositories = create_sqlite_memory_repositories(create_memory_session_factory(engine))
-        task = await repositories.diagnostics.create_task(
-            owner_user_id="user-a",
-            task_id="diagnostic-a",
-            status="accepted",
-            query="Investigate worker CPU alarm",
-            input_payload={"alert": {"severity": "critical"}},
-        )
-        embedding = FakeEmbeddingModel()
-        retrieval = KnowledgeRetrievalTool(
-            embedding_model=embedding,
-            vector_store=FakeVectorStore([_sop_hit("user-a")]),
-            rerank_model=FakeRerankModel(),
-        )
-        mcp = FakeMcpClient()
-        scheduler = FakeCaseIndexScheduler()
-        provider = FakeLlmProvider()
-        service = AiopsDiagnosticService(
-            repositories=repositories,
-            llm_provider=cast(LlmProvider, provider),
-            retrieval_tool=retrieval,
-            mcp_client=cast(LocalMcpClient, mcp),
-            cls_region="ap-guangzhou",
-            cls_topic_id="topic-a",
-            case_persistor=DiagnosisCasePersistor(
-                repositories=repositories,
-                index_task_scheduler=scheduler,
-            ),
-        )
-
-        events = [
-            event
-            async for event in service.stream(
-                task=task,
-                accessible_knowledge_base_ids=("kb_user-a",),
-            )
-        ]
-        persisted = await repositories.diagnostics.get_task(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        reports = await repositories.diagnostics.list_reports(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        checkpoints = await repositories.diagnostics.list_checkpoints(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        steps = await repositories.diagnostics.list_steps(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        evidence = await repositories.diagnostics.list_evidence(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        report_links = await repositories.diagnostics.list_report_evidence_links(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        audits = await cast(Any, repositories.tool_call_audits).list_for_diagnostic_task(
-            owner_user_id="user-a",
-            diagnostic_task_id=task.id,
-        )
-        cases = await repositories.diagnostics.list_cases(owner_user_id="user-a")
-    finally:
-        await engine.dispose()
-
-    assert embedding.inputs == [["Investigate worker CPU alarm"]]
-    assert mcp.calls[0][0] == "SearchLog"
-    assert persisted is not None
-    assert persisted.status == "succeeded"
-    assert persisted.result_payload["noSopMatched"] is False
-    assert reports[0].payload["reportGeneration"] == "llm"
-    assert reports[0].title == "告警分析报告"
-    assert reports[0].content == REPORT_MARKDOWN
-    assert "```" not in reports[0].content
-    report_prompt = next(
-        str(item) for item in provider.chat_model.inputs if "AIOps 诊断报告生成器" in str(item)
-    )
-    assert "## 📋 活跃告警清单" in report_prompt
-    assert "## 🔍 告警根因分析1" in report_prompt
-    assert "## 🛠️ 处理方案执行1" in report_prompt
-    assert "## 📊 结论" in report_prompt
-    assert '"severity":"critical"' in report_prompt
-    report_evidence = cast(list[dict[str, object]], reports[0].payload["evidence"])
-    assert report_evidence[0]["tool"] == "SearchLog"
-    assert "cpu_pressure" in str(report_evidence[0]["summary"])
-    assert "must-not-enter-report-context" not in str(report_evidence[0]["summary"])
-    assert [checkpoint.checkpoint_ns for checkpoint in checkpoints] == [
-        "planner",
-        "executor",
-        "evidence_reasoning",
-        "report",
-    ]
-    assert [audit.tool_name for audit in audits] == ["knowledge_retrieval", "SearchLog"]
-    assert [step.phase for step in steps] == [
-        "planner",
-        "executor",
-        "evidence_reasoning",
-        "report",
-    ]
-    assert {item.kind for item in evidence} == {"alert", "knowledge_reference", "log"}
-    assert all(link.report_id == reports[0].id for link in report_links)
-    assert {link.evidence_id for link in report_links} == {item.id for item in evidence}
-    assert set(cast(list[str], reports[0].payload["evidenceIds"])) == {
-        item.id for item in evidence
-    }
-    assert [event["type"] for event in events][-2:] == ["task.status", "complete"]
-    assert any(event["type"] == "reference.source" for event in events)
-    assert len(cases) == 1
-    assert cases[0].task_id == task.id
-    assert cases[0].report_id == reports[0].id
-    assert cases[0].document_id
-    assert cases[0].index_task_id
-    assert scheduler.scheduled == [("user-a", cases[0].index_task_id)]
-    events = [
-        json.loads(record.message) for record in caplog.records if record.message.startswith("{")
-    ]
-    assert {event["event"] for event in events} == {
-        "agent.aiops.started",
-        "agent.aiops.completed",
-    }
-    assert all(event["diagnosticTaskId"] == task.id for event in events)
-    assert "Investigate worker CPU alarm" not in "\n".join(
-        record.message for record in caplog.records
-    )
-
-
-@pytest.mark.asyncio
-async def test_diagnostic_no_sop_and_mcp_failure_are_explicit(
-    migrated_database_url: str,
-) -> None:
-    engine = create_memory_engine(migrated_database_url)
-    try:
-        repositories = create_sqlite_memory_repositories(create_memory_session_factory(engine))
-        task = await repositories.diagnostics.create_task(
-            owner_user_id="user-a",
-            task_id="diagnostic-b",
-            status="accepted",
-            query="Investigate missing logs",
-        )
-        service = AiopsDiagnosticService(
-            repositories=repositories,
-            llm_provider=cast(
-                LlmProvider,
-                FakeLlmProvider(report_error=RuntimeError("report model unavailable")),
-            ),
-            retrieval_tool=KnowledgeRetrievalTool(
-                embedding_model=FakeEmbeddingModel(),
-                vector_store=FakeVectorStore([]),
-                rerank_model=FakeRerankModel(),
-            ),
-            mcp_client=cast(LocalMcpClient, FakeMcpClient(error=McpClientError("CLS unavailable"))),
-            cls_region="ap-guangzhou",
-            cls_topic_id="topic-a",
-            case_persistor=DiagnosisCasePersistor(
-                repositories=repositories,
-                index_task_scheduler=FakeCaseIndexScheduler(),
-            ),
-        )
-
-        events = [
-            event
-            async for event in service.stream(
-                task=task,
-                accessible_knowledge_base_ids=("kb_user-a",),
-            )
-        ]
-        persisted = await repositories.diagnostics.get_task(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        reports = await repositories.diagnostics.list_reports(
-            owner_user_id="user-a",
-            task_id=task.id,
-        )
-        cases = await repositories.diagnostics.list_cases(owner_user_id="user-a")
-    finally:
-        await engine.dispose()
-
-    assert persisted is not None
-    assert persisted.status == "failed"
-    assert persisted.result_payload["noSopMatched"] is True
-    assert reports[0].payload["reportGeneration"] == "fallback"
-    assert reports[0].content.startswith("# 告警分析报告")
-    assert "未检索到匹配的 SOP" in reports[0].content
-    assert "诊断工具执行失败" in reports[0].content
-    assert "证据不足，无法确认根因" in reports[0].content
-    assert any(event["type"] == "error" for event in events)
-    assert any(_is_failed_tool_event(event) for event in events)
-    assert cases == []
+需补齐机制证据后再判断。
+"""
 
 
 @dataclass
-class FakeAiopsRunner:
-    calls: list[str] = field(default_factory=lambda: [])
+class ModelScript:
+    plan: list[str] = field(default_factory=lambda: [json.dumps(PLAN)])
+    revise: list[str] = field(default_factory=lambda: [json.dumps(REVISION)])
+    assess: list[str] = field(default_factory=lambda: [json.dumps(ASSESSMENT)])
+    report: list[str] = field(default_factory=lambda: [REPORT_BODY])
 
-    async def stream(
-        self,
-        *,
-        task: DiagnosticTaskRecord,
-        accessible_knowledge_base_ids: Sequence[str],
-    ) -> AsyncIterator[dict[str, object]]:
-        self.calls.append(task.id)
-        yield {
-            "id": "evt_1",
-            "type": "task.status",
-            "channel": "aiops",
-            "timestamp": "2026-07-10T00:00:00+00:00",
-            "task": {"id": task.id, "status": "running", "message": "Planner", "progress": 10},
-        }
+    def reply(self, prompt: str) -> str:
+        for marker, queue in (
+            ("执行计划器", self.plan),
+            ("假设调整器", self.revise),
+            ("评估器", self.assess),
+            ("报告撰写者", self.report),
+        ):
+            if marker in prompt:
+                return queue.pop(0) if queue else REPORT_BODY
+        raise AssertionError("unexpected diagnostic prompt")
+
+
+class ScriptedModel:
+    def __init__(self, script: ModelScript) -> None:
+        self._script = script
+
+    async def ainvoke(self, input: object) -> object:
+        return self._script.reply(str(input))
+
+
+class ScriptedLlmProvider:
+    def __init__(self) -> None:
+        self.script = ModelScript()
+
+    def create_diagnostic_model(self, *, timeout_seconds: float) -> ScriptedModel:
+        del timeout_seconds
+        return ScriptedModel(self.script)
+
+
+def _mock_service(repositories: Any) -> AiopsDiagnosticService:
+    return AiopsDiagnosticService(
+        repositories=repositories,
+        llm_provider=cast(Any, ScriptedLlmProvider()),
+        config=DiagnosisConfig(
+            mode="mock",
+            mockScenarioPath=str(SCENARIO_DIR / "order-pool-exhaustion.json"),
+        ),
+        cls_region="ap-guangzhou",
+        cls_topic_id="topic-1",
+    )
+
+
+@pytest.fixture
+def migrated_database_url(tmp_path: Path) -> str:
+    url = f"sqlite+aiosqlite:///{tmp_path / 'aiops.sqlite3'}"
+    config = Config("alembic.ini")
+    config.set_main_option("script_location", "alembic")
+    config.set_main_option("sqlalchemy.url", url)
+    command.upgrade(config, "head")
+    return url
 
 
 @pytest.mark.asyncio
 async def test_aiops_stream_requires_task_owner(migrated_database_url: str) -> None:
-    runner = FakeAiopsRunner()
-    transport = httpx.ASGITransport(
-        app=create_app(
+    engine = create_memory_engine(migrated_database_url)
+    try:
+        sessions = create_memory_session_factory(engine)
+        repositories = create_sqlite_memory_repositories(sessions)
+        runner = _mock_service(repositories)
+        app = create_app(
             database_url=migrated_database_url,
+            session_factory=sessions,
             aiops_diagnostic_runner=cast(AiopsDiagnosticRunner, runner),
         )
-    )
-    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
-        owner = await _register(client, "owner@example.com")
-        other = await _register(client, "other@example.com")
-        create_response = await client.post(
-            "/aiops/diagnostics",
-            headers=_auth_headers(owner["accessToken"]),
-            json={"query": "Inspect CPU", "alert": {"severity": "high"}},
-        )
-        diagnostic_id = create_response.json()["data"]["id"]
-        denied = await client.post(
-            f"/aiops/diagnostics/{diagnostic_id}:stream",
-            headers=_auth_headers(other["accessToken"]),
-        )
-        stream = await client.post(
-            f"/aiops/diagnostics/{diagnostic_id}:stream",
-            headers=_auth_headers(owner["accessToken"]),
-        )
-        history = await client.get(
-            "/aiops/diagnostics",
-            headers=_auth_headers(owner["accessToken"]),
-        )
-        owner_chain = await client.get(
-            f"/aiops/diagnostics/{diagnostic_id}/evidence-chain",
-            headers=_auth_headers(owner["accessToken"]),
-        )
-        denied_chain = await client.get(
-            f"/aiops/diagnostics/{diagnostic_id}/evidence-chain",
-            headers=_auth_headers(other["accessToken"]),
-        )
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            owner = await _register(client, "owner@example.com")
+            other = await _register(client, "other@example.com")
+            create_response = await client.post(
+                "/aiops/diagnostics",
+                headers=_auth_headers(owner["accessToken"]),
+                json={"query": "Inspect order errors", "alert": {}},
+            )
+            diagnostic_id = create_response.json()["data"]["id"]
+            denied = await client.post(
+                f"/aiops/diagnostics/{diagnostic_id}:stream",
+                headers=_auth_headers(other["accessToken"]),
+            )
+            stream = await client.post(
+                f"/aiops/diagnostics/{diagnostic_id}:stream",
+                headers=_auth_headers(owner["accessToken"]),
+            )
+            history = await client.get(
+                "/aiops/diagnostics",
+                headers=_auth_headers(owner["accessToken"]),
+            )
+            owner_chain = await client.get(
+                f"/aiops/diagnostics/{diagnostic_id}/evidence-chain",
+                headers=_auth_headers(owner["accessToken"]),
+            )
+            denied_chain = await client.get(
+                f"/aiops/diagnostics/{diagnostic_id}/evidence-chain",
+                headers=_auth_headers(other["accessToken"]),
+            )
 
-    assert create_response.status_code == 202
-    assert denied.status_code == 403
-    assert stream.status_code == 200
-    assert stream.headers["content-type"].startswith("text/event-stream")
-    assert "event: task.status" in stream.text
-    assert runner.calls == [diagnostic_id]
-    assert history.status_code == 200
-    assert [item["id"] for item in history.json()["data"]["items"]] == [diagnostic_id]
-    assert owner_chain.status_code == 200
-    assert owner_chain.json()["data"]["task"]["id"] == diagnostic_id
-    assert denied_chain.status_code == 403
+        assert create_response.status_code == 202
+        assert denied.status_code == 403
+        assert stream.status_code == 200
+        assert stream.headers["content-type"].startswith("text/event-stream")
+        frames = _sse_frames(stream.text)
+        assert [frame["event"] for frame in frames][-3:] == [
+            "report",
+            "task.status",
+            "complete",
+        ]
+        assert all(frame["id"].startswith("diagnostic_") for frame in frames)
+        assert all(frame["payload"]["id"] == frame["id"] for frame in frames)
+        assert history.status_code == 200
+        assert [item["id"] for item in history.json()["data"]["items"]] == [diagnostic_id]
+        assert owner_chain.status_code == 200
+        assert owner_chain.json()["data"]["task"]["id"] == diagnostic_id
+        assert denied_chain.status_code == 403
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_aiops_stream_resumes_from_persisted_event_id(migrated_database_url: str) -> None:
+    engine = create_memory_engine(migrated_database_url)
+    try:
+        sessions = create_memory_session_factory(engine)
+        repositories = create_sqlite_memory_repositories(sessions)
+        runner = _mock_service(repositories)
+        app = create_app(
+            database_url=migrated_database_url,
+            session_factory=sessions,
+            aiops_diagnostic_runner=cast(AiopsDiagnosticRunner, runner),
+        )
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            owner = await _register(client, "resume@example.com")
+            create_response = await client.post(
+                "/aiops/diagnostics",
+                headers=_auth_headers(owner["accessToken"]),
+                json={"query": "Inspect order errors", "alert": {}},
+            )
+            diagnostic_id = create_response.json()["data"]["id"]
+            full = await client.post(
+                f"/aiops/diagnostics/{diagnostic_id}:stream",
+                headers=_auth_headers(owner["accessToken"]),
+            )
+            frames = _sse_frames(full.text)
+            cursor = frames[0]["id"]
+            resume_headers = {**_auth_headers(owner["accessToken"]), "Last-Event-ID": cursor}
+            unknown_headers = {
+                **_auth_headers(owner["accessToken"]),
+                "Last-Event-ID": "diagnostic_unknown_cursor",
+            }
+            resumed = await client.post(
+                f"/aiops/diagnostics/{diagnostic_id}:stream",
+                headers=resume_headers,
+            )
+            unknown_cursor = await client.post(
+                f"/aiops/diagnostics/{diagnostic_id}:stream",
+                headers=unknown_headers,
+            )
+
+        resumed_frames = _sse_frames(resumed.text)
+        assert resumed.status_code == 200
+        assert resumed_frames
+        assert [frame["id"] for frame in resumed_frames] == [frame["id"] for frame in frames[1:]]
+        assert unknown_cursor.status_code == 404
+    finally:
+        await engine.dispose()
 
 
 @pytest.mark.asyncio
@@ -610,21 +378,6 @@ async def test_diagnostic_evidence_repository_rejects_cross_tenant_step(
         await engine.dispose()
 
 
-def _sop_hit(owner_user_id: str) -> VectorSearchResult:
-    return VectorSearchResult(
-        chunk_id="chunk_sop",
-        document_id="document_sop",
-        knowledge_base_id=f"kb_{owner_user_id}",
-        owner_user_id=owner_user_id,
-        tenant_id=owner_user_id,
-        content="Check CPU saturation and query worker logs before mitigation.",
-        source="worker-cpu-sop.md",
-        created_at=1,
-        metadata={"kind": "sop"},
-        score=0.92,
-    )
-
-
 async def _register(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
     response = await client.post(
         "/auth/register",
@@ -641,115 +394,16 @@ def _auth_headers(token: object) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def _is_failed_tool_event(event: dict[str, object]) -> bool:
-    tool_call = event.get("toolCall")
-    if not isinstance(tool_call, Mapping):
-        return False
-    tool_call_payload = cast(Mapping[str, object], tool_call)
-    return bool(
-        event.get("type") == "tool.call" and tool_call_payload.get("status") == "failed"
-    )
-
-
-@pytest.mark.asyncio
-async def test_diagnostic_query_uses_alert_service_and_time_window(
-    migrated_database_url: str,
-) -> None:
-    engine = create_memory_engine(migrated_database_url)
-    try:
-        repositories = create_sqlite_memory_repositories(create_memory_session_factory(engine))
-        task = await repositories.diagnostics.create_task(
-            owner_user_id="user-a",
-            task_id="diagnostic-query-scoping",
-            status="accepted",
-            query="Investigate payment timeout",
-            input_payload={
-                "alert": {
-                    "labels": {"service": "payment-service", "severity": "critical"},
-                    "startsAt": "2026-07-11T06:00:00Z",
-                }
-            },
-        )
-        mcp = FakeMcpClient()
-        service = AiopsDiagnosticService(
-            repositories=repositories,
-            llm_provider=cast(LlmProvider, FakeLlmProvider()),
-            retrieval_tool=KnowledgeRetrievalTool(
-                embedding_model=FakeEmbeddingModel(),
-                vector_store=FakeVectorStore([]),
-                rerank_model=FakeRerankModel(),
-            ),
-            mcp_client=cast(LocalMcpClient, mcp),
-            cls_region="ap-guangzhou",
-            cls_topic_id="topic-a",
-            case_persistor=DiagnosisCasePersistor(
-                repositories=repositories,
-                index_task_scheduler=FakeCaseIndexScheduler(),
-            ),
-        )
-
-        [_ async for _ in service.stream(task=task, accessible_knowledge_base_ids=("kb_user-a",))]
-    finally:
-        await engine.dispose()
-
-    assert len(mcp.calls) >= 1
-    search_log_call = next(call for call in mcp.calls if call[0] == "SearchLog")
-    arguments = search_log_call[1]
-    assert arguments["Query"] == "service:payment-service"
-    alert_starts_at_ms = 1783749600000
-    assert arguments["From"] == alert_starts_at_ms - 10 * 60 * 1000
-    assert arguments["To"] == alert_starts_at_ms + 5 * 60 * 1000
-    assert arguments["Limit"] == 50
-
-
-@pytest.mark.asyncio
-async def test_diagnostic_query_falls_back_when_alert_has_no_service(
-    migrated_database_url: str,
-) -> None:
-    engine = create_memory_engine(migrated_database_url)
-    try:
-        repositories = create_sqlite_memory_repositories(create_memory_session_factory(engine))
-        task = await repositories.diagnostics.create_task(
-            owner_user_id="user-a",
-            task_id="diagnostic-query-fallback",
-            status="accepted",
-            query="Investigate unknown alert",
-            input_payload={"alert": {"severity": "critical"}},
-        )
-        mcp = FakeMcpClient()
-        service = AiopsDiagnosticService(
-            repositories=repositories,
-            llm_provider=cast(LlmProvider, FakeLlmProvider()),
-            retrieval_tool=KnowledgeRetrievalTool(
-                embedding_model=FakeEmbeddingModel(),
-                vector_store=FakeVectorStore([]),
-                rerank_model=FakeRerankModel(),
-            ),
-            mcp_client=cast(LocalMcpClient, mcp),
-            cls_region="ap-guangzhou",
-            cls_topic_id="topic-a",
-            case_persistor=DiagnosisCasePersistor(
-                repositories=repositories,
-                index_task_scheduler=FakeCaseIndexScheduler(),
-            ),
-        )
-
-        [_ async for _ in service.stream(task=task, accessible_knowledge_base_ids=("kb_user-a",))]
-    finally:
-        await engine.dispose()
-
-    assert len(mcp.calls) >= 1
-    search_log_call = next(call for call in mcp.calls if call[0] == "SearchLog")
-    arguments = search_log_call[1]
-    assert arguments["Query"] == "*"
-    assert arguments["Limit"] == 50
-
-
-@pytest.fixture
-def migrated_database_url(tmp_path: Path) -> str:
-    database_path = tmp_path / "aiops-diagnostics.sqlite3"
-    config = Config("alembic.ini")
-    config.set_main_option("script_location", "alembic")
-    config.set_main_option("sqlalchemy.url", f"sqlite+aiosqlite:///{database_path}")
-    command.upgrade(config, "head")
-    return f"sqlite+aiosqlite:///{database_path}"
+def _sse_frames(body: str) -> list[dict[str, Any]]:
+    frames: list[dict[str, Any]] = []
+    event_name = ""
+    event_id = ""
+    for line in body.splitlines():
+        if line.startswith("event: "):
+            event_name = line.removeprefix("event: ")
+        elif line.startswith("id: "):
+            event_id = line.removeprefix("id: ")
+        elif line.startswith("data: "):
+            payload = cast(dict[str, Any], json.loads(line.removeprefix("data: ")))
+            frames.append({"event": event_name, "id": event_id, "payload": payload})
+    return frames
