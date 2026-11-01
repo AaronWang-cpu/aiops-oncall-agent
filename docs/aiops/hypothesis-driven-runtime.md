@@ -12,8 +12,8 @@
 | P2 一致持久化与恢复 | 持久底座和恢复策略验收通过；新图接线仍在 P4 |
 | P3 固定上下文与隔离工具 | 上下文与工具适配器验收通过；七节点调用在 P4 接线 |
 | P4 假设图、预算与报告 | 后端七节点、报告、终态与 SSE 验收通过；旧图已替换 |
-| P5 前端展示与兼容 | 三栏工作区、假设与事故结论展示、模拟/失败标识、流去重与续读验收通过；浏览器截图在 P6 获取授权后提供 |
-| P6 联合验收与本机启动 | 后端/前端/契约全量回归与跨 owner 隔离、脱敏集成测试完成；本机启动与浏览器体检、主规格归档待用户授权 |
+| P5 前端展示与兼容 | 三栏工作区、假设与事故结论展示、模拟/失败标识、流去重与续读验收通过；浏览器截图在 P6 提供 |
+| P6 联合验收与本机启动 | 后端/前端/契约全量回归、跨 owner 隔离与脱敏集成测试、本机启动与浏览器体检、主规格归档均已完成；本机验收发现的三处缺陷已修复 |
 
 ## 诊断配置
 
@@ -37,6 +37,8 @@
 | modelTimeoutSeconds | 60 | 单次模型请求上限 |
 
 数值必须是正整数，阶段之和必须等于总时长；非法值、布尔值及未知字段直接拒绝，不自动裁剪或扩展预算。配置加载不会建立网络连接，P1 的 Mock 配置校验不表示工具及场景已接入。
+
+预算与模型延迟需要匹配：单次模型调用超过 `modelTimeoutSeconds`，或调用剩余阶段时间不足，都会按核心阶段执行失败收尾（不重试、不写成成功）；只有预算在调用之间耗尽才走 `budget_exhausted` 正常收尾。宿主模型单次耗时较长时，应提高 `modelTimeoutSeconds` 或减少 `maxRounds`，并相应核对 `investigationSeconds` 是否够用。
 
 模板只保存空密钥与安全默认；本地配置、私有知识和真实日志不得提交。内容路径和知识加载在 P3 接入，前端不能提交任意本地文件路径。
 
@@ -216,5 +218,21 @@ AIOps 工作区按左（输入、告警、历史）、中（任务卡片、实�
 - 后端全量 `uv run pytest` 收集 361 项，10 项失败均为本地环境既有问题：Milvus 未启动 6 项（`test_chat_sessions_api.py`、`test_stream_rag_chat_api.py`）、`bash` 不可用 1 项（`test_local_development_docs.py`）、本地 `config/project.json` 与 `config/user.project.json` 不符合模板期望 3 项（`test_environment_examples.py`）。未 skip 测试或放宽断言。
 - `uv run ruff check .` 报 212 项、`uv run pyright` 报 9 项，全部位于既有模块（`aiops/eval_fixtures.py` 197 项、`aiops/eval_runner.py`、`aiops/evidence_tools.py`、`aiops/catalogs/*`、`tests/test_eval_fixtures.py`、`tests/test_evidence_tools.py`）；本阶段新增与改动文件为 0 项。
 - 前端与共享包：`frontend:typecheck`、`frontend:test`（22 文件 / 93 项）、`frontend:build`、`contracts:typecheck`、契约测试 34 项、`openspec validate --all`（43 项）与 `docs:build` 全部通过。
-- 仓库现状提示：`config/project.json` 与 `config/user.project.json` 自基线提交起被 Git 跟踪，而 README、`.gitignore` 期望与 `test_environment_examples.py` 均要求它们被忽略；该项与诊断功能无关，等待用户决定是否取消跟踪。
+- 仓库现状提示：`config/project.json` 与 `config/user.project.json` 曾自基线起被 Git 跟踪，而 README、`.gitignore` 期望与 `test_environment_examples.py` 均要求它们被忽略；该项与诊断功能无关，已在 `69a9600` 取消跟踪并加入 `.gitignore`，本地文件保留。模板内容与本地开发默认值的差异仍待用户确认。
 - 未启动本机服务、未做浏览器桌面/窄屏体检、未发起真实模型或 CLS 请求；主规格同步与归档等待用户授权。
+
+### P6 本机验收补充（2026-11-01）
+
+本机启动（合并配置写到仓库外临时文件，仓库内配置不改动）：
+
+- 后端以 Mock 模式 + 固定场景启动，前端 dev server 同机运行；`/health` 返回 200，`/ready` 返回 503 degraded（Milvus 与 Alertmanager 未启动），跨域、登录与 `POST /aiops/diagnostics` 均按契约返回 202。
+- 用 Chromium CDP 驱动真实浏览器在 1600、900、420 三档宽度体检 `/aiops`：桌面为 `288 / 655 / 393` 三栏，窄屏折为单列纵排，三档均无横向溢出；控制台无错误。
+- 端到端链路实测可走通：提交问题与告警 → 202 → `:stream` 增量事件 → 证据链回载 → 报告区渲染；时间线按真实事件显示查询、工具调用、假设更新与评估，报告区按状态显示成功或失败提示，Mock 任务显示“模拟场景”。
+- 真实模型（宿主 `qwen` 系列）参与 Mock 工具链，观测到三处实现缺陷并已修复：
+  - 证据内容未进入推理提示词：计划、假设与评估提示词只有查询摘要（工具名、问题、状态），模型读不到刚采集的指标数值、日志正文与变更明细，于是“没有可依据的解释”，首轮零假设被判定为初始化失败。现由运行期仓库按 evidence ID 解引用完整记录并写入提示词，原始结果仍不进入 checkpoint 与 working state。
+  - 评估输出契约缺字段说明：模型给出 `stop_reason` 枚举外取值（如 `need_more_evidence`），两次结构校验都不通过。提示词现明确列出允许取值与“调查继续时必须为空”的规则。
+  - 恢复决策的失败原因未被采纳：核心阶段模型意图中断时，`plan_diagnostic_recovery` 已判定失败，但服务层忽略该原因并继续进入 finalize，可能把中断报告成已收敛。现按恢复设计走执行失败收尾，不重放该意图。
+- 修复后单次运行观测：首轮 3 条查询全部成功，证据包含 `order_db_connection_pool_usage` 0.41→0.99→1.0、`order_request_latency_p99` 4380→4520、`HikariPool-1 ... waiting=37` 等原始记录；模型据此形成 3 条可评估假设、竞争关系与缺口，评估给出 `build_queries` 与未满足需求，第二轮继续采证并细化假设（新增 H4、细化 H1/H2）。
+- 宿主模型单次调用耗时 40–150 秒，超过默认单次 60 秒上限，且在 390 秒探索阶段内难以容纳两轮以上：被阶段预算截断的模型调用按设计走执行失败（不重试、不兜底成成功），预算在调用之间耗尽的运行则按 `budget_exhausted` 正常收尾并生成报告。本机演示配置因此在仓库外临时配置中把单次模型上限调到 150 秒、轮次上限设为 1，以提高可复现性；仓库内默认值保持 5 轮 / 60 秒。
+- 本机仍缺 Milvus、Alertmanager 与 CLS 凭据，`real` 模式的真实工具链未在本机跑通；真实模式路径由传输替身集成测试覆盖。
+
