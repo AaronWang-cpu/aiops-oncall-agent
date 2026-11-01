@@ -21,6 +21,7 @@ from typing import Any, Literal, TypedDict, TypeVar, cast
 from langgraph.graph import END, START, StateGraph
 from pydantic import JsonValue, ValidationError
 
+from super_ai.aiops.catalogs import get_metrics_for_service
 from super_ai.aiops.diagnosis_budget import (
     BudgetExpired,
     BudgetState,
@@ -184,7 +185,10 @@ class AiopsDiagnosticService:
         if task is None:
             raise RuntimeError("Diagnostic task is unavailable.")
         run = self._new_run(
-            context=context, scope=scope, runtime=runtime, task_input=task.input_payload,
+            context=context,
+            scope=scope,
+            runtime=runtime,
+            task_input=task.input_payload,
             query=task.query,
         )
         stored = await runtime.load_state(owner_user_id=scope.owner_user_id, task_id=scope.task_id)
@@ -275,17 +279,13 @@ class AiopsDiagnosticService:
             config=self._config,
             clock=self._clock,
             llm_provider=self._llm_provider,
-            cls_defaults=ClsSearchDefaults(
-                region=self._cls_region, topic_id=self._cls_topic_id
-            ),
+            cls_defaults=ClsSearchDefaults(region=self._cls_region, topic_id=self._cls_topic_id),
             toolbox_factory=self._toolbox_for,
             alert=_dict(task_input.get("alert")),
             query=query,
         )
 
-    async def _toolbox_for(
-        self, owner_user_id: str, context: DiagnosisContext
-    ) -> DiagnosisToolbox:
+    async def _toolbox_for(self, owner_user_id: str, context: DiagnosisContext) -> DiagnosisToolbox:
         if self._config.mode == "mock":
             return build_mock_diagnosis_toolbox(context)
         client = await self._diagnostic_client(owner_user_id=owner_user_id)
@@ -862,7 +862,9 @@ class _Run:
         outcome = _RoundResult(calls_planned=len(plan.calls))
 
         async def run_call(index: int, call: Any) -> None:
-            query_id = f"call:{round_index}:{index}"
+            # Tool-call identity is a global primary key on the audit and evidence tables,
+            # so it must carry the task id; a round/index pair alone is reused by every run.
+            query_id = f"{self._scope.task_id}:call:{round_index}:{index}"
             async with semaphore:
                 async with self._commit_lock:
                     prepared = await self._begin_call(
@@ -1592,7 +1594,7 @@ class _Run:
         if alert.starts_at_ms is not None:
             start, end = _log_window(alert.starts_at_ms)
             window = f"from_ms={start}, to_ms={end}"
-        return (
+        hint = (
             f"可用工具：{json.dumps(names, ensure_ascii=False)}\n"
             f"告警服务：{alert.service or '未知'}；窗口：{window}\n"
             "工具参数契约：\n"
@@ -1600,6 +1602,25 @@ class _Run:
             f"- {METRIC_TOOL}: service, metric_names, from_ms, to_ms, labels?, aggregation?\n"
             f"- {CHANGE_TOOL}: services, from_ms, to_ms, change_type?"
         )
+        catalog = self._metric_catalog(alert.service)
+        if catalog:
+            hint += (
+                f"\n{METRIC_TOOL} 的 metric_names 只能从这个白名单中选择："
+                f"{json.dumps(catalog, ensure_ascii=False)}"
+            )
+        return hint
+
+    def _metric_catalog(self, service: str | None) -> list[str]:
+        """Mock mode validates metric names against the catalog, so the planner must see it."""
+        if self._config.mode != "mock" or not service:
+            return []
+        catalog = sorted(definition.name for definition in get_metrics_for_service(service))
+        scenario = self._scenario()
+        if scenario is None:
+            return catalog
+        observed = {metric.metric_name for metric in scenario.metrics if metric.service == service}
+        available = [name for name in catalog if name in observed]
+        return available or catalog
 
     def _evidence_digest(self) -> str:
         records = self._query_records()
@@ -1674,7 +1695,9 @@ class _Run:
             "你是 AIOps 调查的评估器。只输出 JSON，字段为 hypothesis_assessments、"
             "hypothesis_relations、incident_conclusion、next_step。\n"
             "hypothesis_assessments 必须覆盖全部当前假设且各一次，字段为 hypothesis_id、"
-            "hypothesis_status、assessment、evidence_links、gaps。\n"
+            "hypothesis_status、assessment、evidence_links、gaps；\n"
+            "evidence_links 每项为 evidence_id、relation（supports/contradicts/context）、"
+            "explanation；gaps 每项为 question、why_it_matters。\n"
             "hypothesis_relations 每项为 from_hypothesis_id、to_hypothesis_id、relation_type"
             "（causal_link 或 competing）、explanation、evidence_ids。\n"
             "incident_conclusion 为 conclusion_status、root_cause、stop_reason、explanation；"

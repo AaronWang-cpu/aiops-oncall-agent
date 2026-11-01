@@ -72,26 +72,14 @@ MOCK_ASSESSMENT: dict[str, object] = {
             "hypothesis_id": "H1",
             "hypothesis_status": "supported",
             "assessment": "日志与指标同时显示连接池耗尽，订单接口因此报错。",
-            "evidence_links": [
-                {
-                    "evidence_id": "evidence:call:1:0",
-                    "relation": "supports",
-                    "explanation": "错误日志显示等待连接超时。",
-                }
-            ],
+            "evidence_links": [],
             "gaps": [],
         },
         {
             "hypothesis_id": "H2",
             "hypothesis_status": "supported",
             "assessment": "变更记录显示连接池上限被下调到 20，是耗尽的直接机制。",
-            "evidence_links": [
-                {
-                    "evidence_id": "evidence:call:1:2",
-                    "relation": "supports",
-                    "explanation": "变更明细给出上限调整前后取值。",
-                }
-            ],
+            "evidence_links": [],
             "gaps": [],
         },
     ],
@@ -101,7 +89,7 @@ MOCK_ASSESSMENT: dict[str, object] = {
             "to_hypothesis_id": "H1",
             "relation_type": "causal_link",
             "explanation": "上限下调导致连接池耗尽。",
-            "evidence_ids": ["evidence:call:1:1"],
+            "evidence_ids": [],
         }
     ],
     "incident_conclusion": {
@@ -155,7 +143,7 @@ REAL_ASSESSMENT: dict[str, object] = {
             "assessment": "真实 CLS 日志显示等待连接超时。",
             "evidence_links": [
                 {
-                    "evidence_id": "evidence:call:1:0",
+                    "evidence_id": "evidence:task-real:call:1:0",
                     "relation": "supports",
                     "explanation": "日志给出等待连接超时。",
                 }
@@ -538,6 +526,48 @@ async def test_api_mock_diagnosis_delivers_the_frontend_contract(
         # 重复订阅只重放已持久事件，不重新运行诊断。
         assert _sse_frames(replay.text) == frames
         assert len(script.calls) == events_before
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_second_diagnosis_in_the_same_database_does_not_collide(
+    migrated_url: str,
+) -> None:
+    """Tool-call identity must be task-scoped, or the second run collides on the audit key."""
+    engine = create_memory_engine(migrated_url)
+    try:
+        sessions = create_memory_session_factory(engine)
+        repositories = create_sqlite_memory_repositories(sessions)
+        runner = _mock_service(repositories, _two_run_script())
+        app = create_app(
+            database_url=migrated_url,
+            session_factory=sessions,
+            aiops_diagnostic_runner=cast(AiopsDiagnosticRunner, runner),
+        )
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            owner = await _register(client, "repeat-owner@example.com")
+            headers = _auth_headers(owner["accessToken"])
+            statuses: list[str] = []
+            query_counts: list[int] = []
+            for _ in range(2):
+                created = await client.post(
+                    "/aiops/diagnostics",
+                    headers=headers,
+                    json={"query": "订单接口错误率升高", "alert": {"service": "order-service"}},
+                )
+                diagnostic_id = cast(str, created.json()["data"]["id"])
+                chain = await _wait_terminal(client, headers, diagnostic_id)
+                task = cast(dict[str, Any], chain["task"])
+                statuses.append(cast(str, task["status"]))
+                diagnosis = cast(dict[str, Any], task["resultPayload"]["diagnosis"])
+                query_counts.append(len(cast(list[object], diagnosis["query_records"])))
+
+        assert statuses == ["succeeded", "succeeded"]
+        assert query_counts == [3, 3]
+        jobs = repositories.background_jobs
+        assert jobs is not None
     finally:
         await engine.dispose()
 

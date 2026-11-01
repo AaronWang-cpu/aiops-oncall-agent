@@ -50,13 +50,7 @@ ASSESSMENT: dict[str, object] = {
             "hypothesis_id": "H1",
             "hypothesis_status": "supported",
             "assessment": "错误日志显示连接等待超时。",
-            "evidence_links": [
-                {
-                    "evidence_id": "evidence:call:1:0",
-                    "relation": "supports",
-                    "explanation": "日志给出等待连接超时。",
-                }
-            ],
+            "evidence_links": [],
             "gaps": [],
         }
     ],

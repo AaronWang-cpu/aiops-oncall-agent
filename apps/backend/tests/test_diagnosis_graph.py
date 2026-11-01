@@ -65,7 +65,7 @@ CONFIRMED_ASSESSMENT: dict[str, object] = {
             "assessment": "日志与指标同时显示连接池耗尽，订单接口因此报错。",
             "evidence_links": [
                 {
-                    "evidence_id": "evidence:call:1:0",
+                    "evidence_id": "evidence:task-graph:call:1:0",
                     "relation": "supports",
                     "explanation": "错误日志显示等待连接超时。",
                 }
@@ -78,7 +78,7 @@ CONFIRMED_ASSESSMENT: dict[str, object] = {
             "assessment": "变更记录显示连接池上限被下调到 20，是耗尽的直接机制。",
             "evidence_links": [
                 {
-                    "evidence_id": "evidence:call:1:2",
+                    "evidence_id": "evidence:task-graph:call:1:2",
                     "relation": "supports",
                     "explanation": "变更明细给出上限调整前后取值。",
                 }
@@ -92,7 +92,7 @@ CONFIRMED_ASSESSMENT: dict[str, object] = {
             "to_hypothesis_id": "H1",
             "relation_type": "causal_link",
             "explanation": "上限下调导致连接池耗尽。",
-            "evidence_ids": ["evidence:call:1:1"],
+            "evidence_ids": ["evidence:task-graph:call:1:1"],
         }
     ],
     "incident_conclusion": {
@@ -491,6 +491,18 @@ async def test_mock_mode_marks_report_and_diagnosis_as_simulated(migrated_url: s
     final = cast(dict[str, object], events[-1]["result"])
     reports = cast(list[dict[str, object]], final["reports"])
     assert "模拟场景" in str(reports[0]["content"])
+
+
+@pytest.mark.asyncio
+async def test_query_planner_prompt_exposes_the_fixed_metric_catalog(migrated_url: str) -> None:
+    harness = await _harness(migrated_url, _script())
+
+    await harness.service.run(harness.context)
+
+    plan_prompts = [prompt for prompt in harness.script.calls if "执行计划器" in prompt]
+    assert plan_prompts
+    assert "order_db_connection_pool_usage" in plan_prompts[0]
+    assert "只能从这个白名单中选择" in plan_prompts[0]
 
 
 @pytest.mark.asyncio
