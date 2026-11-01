@@ -13,7 +13,7 @@
 | P3 固定上下文与隔离工具 | 上下文与工具适配器验收通过；七节点调用在 P4 接线 |
 | P4 假设图、预算与报告 | 后端七节点、报告、终态与 SSE 验收通过；旧图已替换 |
 | P5 前端展示与兼容 | 三栏工作区、假设与事故结论展示、模拟/失败标识、流去重与续读验收通过；浏览器截图在 P6 获取授权后提供 |
-| P6 联合验收与本机启动 | 未开始 |
+| P6 联合验收与本机启动 | 后端/前端/契约全量回归与跨 owner 隔离、脱敏集成测试完成；本机启动与浏览器体检、主规格归档待用户授权 |
 
 ## 诊断配置
 
@@ -200,3 +200,21 @@ AIOps 工作区按左（输入、告警、历史）、中（任务卡片、实�
 - 新增 `diagnosis` 投影（`activeDiagnosis`）与流游标、去重、续读逻辑；`aiopsClient.streamDiagnostic` 支持 `Last-Event-ID`；`AiopsEvidenceChain`、`AiopsTimeline`、`AiopsReportPanel`、`AiopsView` 同步七节点与假设展示。
 - 前端 `npm run frontend:typecheck`、`npm run frontend:test`（22 文件 / 93 项）、`npm run frontend:build` 全部通过；修复基线中两处既有前端失败（布局与案例库选择断言）。
 - 未发起真实模型或 CLS 请求，未做浏览器桌面/窄屏验收；截图与本机启动属于 P6，需单独授权。
+
+## 联合验收与隔离
+
+`test_diagnosis_integration.py` 用真实 SQLite 仓库、真实 job runtime、HTTP/SSE 端点和传输替身贯通主路径：
+
+- Mock 场景经 `POST /aiops/diagnostics` → `:stream` → 证据链回载：七节点步骤、3 条成功查询、确认结论、四部分报告与 `report/task.status/complete` 顺序；重复订阅只重放已持久事件，不重新运行诊断。
+- 真实模式用 `LocalMcpClient` 传输替身：每次工具调用只发起一次（无自动重试），`mode` 为 `real`，报告不出现“模拟场景”；工具失败时查询记录为 `failed`，且不写入模拟证据、不伪造假设与根因。
+- 取消：排队任务取消不调用模型、不加载外部资源、不产出调查投影。
+- 跨 owner：他人任务流与证据链返回 403 且不回显任务 ID；`Last-Event-ID` 必须属于同一 user 与同一 job，否则 404。
+- 脱敏：工具错误中的 `sk-*`、`AKID*` 凭据在查询记录、诊断投影与 job 事件中统一替换为 `[redacted]`。
+
+### P6 实际结果
+
+- 后端全量 `uv run pytest` 收集 361 项，10 项失败均为本地环境既有问题：Milvus 未启动 6 项（`test_chat_sessions_api.py`、`test_stream_rag_chat_api.py`）、`bash` 不可用 1 项（`test_local_development_docs.py`）、本地 `config/project.json` 与 `config/user.project.json` 不符合模板期望 3 项（`test_environment_examples.py`）。未 skip 测试或放宽断言。
+- `uv run ruff check .` 报 212 项、`uv run pyright` 报 9 项，全部位于既有模块（`aiops/eval_fixtures.py` 197 项、`aiops/eval_runner.py`、`aiops/evidence_tools.py`、`aiops/catalogs/*`、`tests/test_eval_fixtures.py`、`tests/test_evidence_tools.py`）；本阶段新增与改动文件为 0 项。
+- 前端与共享包：`frontend:typecheck`、`frontend:test`（22 文件 / 93 项）、`frontend:build`、`contracts:typecheck`、契约测试 34 项、`openspec validate --all`（43 项）与 `docs:build` 全部通过。
+- 仓库现状提示：`config/project.json` 与 `config/user.project.json` 自基线提交起被 Git 跟踪，而 README、`.gitignore` 期望与 `test_environment_examples.py` 均要求它们被忽略；该项与诊断功能无关，等待用户决定是否取消跟踪。
+- 未启动本机服务、未做浏览器桌面/窄屏体检、未发起真实模型或 CLS 请求；主规格同步与归档等待用户授权。
