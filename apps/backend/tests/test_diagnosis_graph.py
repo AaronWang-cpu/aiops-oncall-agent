@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -139,9 +140,12 @@ class ModelScript:
     assess: list[str] = field(default_factory=lambda: list[str]())
     report: list[str] = field(default_factory=lambda: list[str]())
     calls: list[str] = field(default_factory=lambda: list[str]())
+    interrupt_on: str | None = None
 
     def reply(self, prompt: str) -> str:
         self.calls.append(prompt)
+        if self.interrupt_on is not None and self.interrupt_on in prompt:
+            raise asyncio.CancelledError
         if "执行计划器" in prompt:
             return self._next(self.plan, "plan")
         if "假设调整器" in prompt:
@@ -503,6 +507,72 @@ async def test_query_planner_prompt_exposes_the_fixed_metric_catalog(migrated_ur
     assert plan_prompts
     assert "order_db_connection_pool_usage" in plan_prompts[0]
     assert "只能从这个白名单中选择" in plan_prompts[0]
+
+
+@pytest.mark.asyncio
+async def test_hypothesis_prompts_carry_the_tool_records(migrated_url: str) -> None:
+    """A summary alone cannot be the only evidence: the model must read the records."""
+    harness = await _harness(migrated_url, _script())
+
+    await harness.service.run(harness.context)
+
+    revise_prompts = [prompt for prompt in harness.script.calls if "假设调整器" in prompt]
+    assess_prompts = [prompt for prompt in harness.script.calls if "评估器" in prompt]
+    assert revise_prompts and assess_prompts
+    for prompt in (revise_prompts[0], assess_prompts[0]):
+        assert "证据内容：" in prompt
+        assert "HikariPool-1" in prompt
+        assert "maximumPoolSize" in prompt
+        assert "order_db_connection_pool_usage" in prompt
+
+
+@pytest.mark.asyncio
+async def test_assessment_prompt_states_the_stop_reason_contract(migrated_url: str) -> None:
+    """The model invented stop reasons until the prompt listed the allowed values."""
+    harness = await _harness(migrated_url, _script())
+
+    await harness.service.run(harness.context)
+
+    assess_prompts = [prompt for prompt in harness.script.calls if "评估器" in prompt]
+    assert assess_prompts
+    prompt = assess_prompts[0]
+    assert "root_cause_confirmed、budget_exhausted、critical_data_unavailable 或 null" in prompt
+    assert "调查继续（next_step.action 不是 finalize）时必须为 null" in prompt
+
+
+@pytest.mark.asyncio
+async def test_resume_after_interrupted_model_intent_fails_without_retry(
+    migrated_url: str,
+) -> None:
+    """Design 7: an interrupted core model intent ends as an execution failure, never replayed."""
+    interrupted = _script()
+    interrupted.interrupt_on = "假设调整器"
+    harness = await _harness(migrated_url, interrupted)
+
+    with pytest.raises(asyncio.CancelledError):
+        await harness.service.run(harness.context)
+
+    resumed = ModelScript(revise=_script().revise, assess=_script().assess, report=_script().report)
+    harness.provider.script = resumed
+    await harness.service.run(harness.context)
+
+    assert resumed.calls == []
+    task = await harness.repositories.diagnostics.get_task(
+        owner_user_id=OWNER, task_id="task-graph"
+    )
+    assert task is not None and task.status == "failed"
+    conclusion = cast(
+        dict[str, object],
+        cast(dict[str, object], task.result_payload["diagnosis"])["incident_conclusion"],
+    )
+    assert conclusion["conclusion_status"] == "unconfirmed"
+    events = await _events(harness.jobs, "job-graph")
+    assert [event["type"] for event in events][-4:] == [
+        "report",
+        "error",
+        "task.status",
+        "complete",
+    ]
 
 
 @pytest.mark.asyncio

@@ -202,6 +202,13 @@ class AiopsDiagnosticService:
                 return
             run.adopt_checkpoint(decision.checkpoint)
             run.adopt_interrupted(decision.interrupted_queries)
+            if decision.failure_reason is not None:
+                # An interrupted core model intent is never retried; it ends as a failure.
+                run.limitation(FINAL_FAILURE_NOTE)
+                await run.finish_programmatically(
+                    status="failed", stop_reason=None, failure_reason=decision.failure_reason
+                )
+                return
         graph = self._build_graph(run)
         try:
             await graph.ainvoke(run.graph_state(), config={"recursion_limit": 80})
@@ -431,6 +438,8 @@ class _Run:
         self._context_snapshot: DiagnosisContext | None = None
         self._guard = RepeatedFailureGuard()
         self._commit_lock = asyncio.Lock()
+        # Raw tool results stay out of the checkpoint; prompts dereference them from the store.
+        self._evidence_data: dict[str, JsonValue] = {}
         self.state = _State(checkpoint={})
 
     # ---------- checkpoint plumbing ----------
@@ -549,6 +558,19 @@ class _Run:
 
     def _evidence_ids(self) -> list[str]:
         return [str(item) for item in _list(self.state.working.get("evidence_ids"))]
+
+    async def _refresh_evidence(self) -> None:
+        """Dereference stored evidence so prompts reason over the records, not a summary."""
+        missing = [item for item in self._evidence_ids() if item not in self._evidence_data]
+        if not missing:
+            return
+        records = await self._runtime.load_evidence(
+            owner_user_id=self._scope.owner_user_id,
+            task_id=self._scope.task_id,
+            evidence_ids=missing,
+        )
+        for record in records:
+            self._evidence_data[str(record.get("evidence_id"))] = record.get("data")
 
     def _next_action(self) -> str:
         return str(self.state.working.get("next_action") or "build_queries")
@@ -790,6 +812,7 @@ class _Run:
             - budget.state.budget.unknown_tool_calls
         )
         max_calls = max(0, min(self._config.max_calls_per_batch, remaining_calls))
+        await self._refresh_evidence()
         prompt = self._build_queries_prompt(available=available, max_calls=max_calls)
         plan = await self._structured_output(
             node="build_queries",
@@ -937,6 +960,7 @@ class _Run:
         round_index = _int(self._runtime_state.get("round_index"), default=1)
         operation_id = f"revise_hypotheses:{round_index}"
         current = self._hypotheses()
+        await self._refresh_evidence()
         prompt = self._revise_prompt(current)
         revision = await self._structured_output(
             node="revise_hypotheses",
@@ -993,6 +1017,7 @@ class _Run:
         await self._guard_boundaries(phase=phase)
         round_index = _int(self._runtime_state.get("round_index"), default=1)
         operation_id = f"assess_hypotheses:{round_index}"
+        await self._refresh_evidence()
         prompt = self._assess_prompt(final_analysis=final_analysis)
         assessment = await self._structured_output(
             node="assess_hypotheses",
@@ -1121,6 +1146,7 @@ class _Run:
     async def report(self, state: DiagnosisStreamState) -> DiagnosisStreamState:
         del state
         await self._context.raise_if_lease_lost()
+        await self._refresh_evidence()
         model_body = await self._report_model_body()
         facts = self._report_facts()
         report = build_diagnosis_report(facts=facts, model_body=model_body)
@@ -1632,6 +1658,9 @@ class _Run:
                 f"- {record.query_id} [{record.status}] {record.tool_name} "
                 f"问题：{record.question} 说明：{record.status_reason}"
             )
+            payload = self._evidence_data.get(f"evidence:{record.query_id}")
+            if payload is not None:
+                lines.append(f"  证据内容：{json.dumps(payload, ensure_ascii=False)}")
         return "\n".join(lines)
 
     def _build_queries_prompt(self, *, available: Sequence[object], max_calls: int) -> str:
@@ -1655,7 +1684,7 @@ class _Run:
             f"{self._tool_schema_hint()}\n"
             f"当前假设与缺口：\n{assessment_digest}\n"
             f"尚未满足的信息需求：\n{unmet_text}\n"
-            f"已有查询记录：\n{self._evidence_digest()}\n"
+            f"已有现场查询与证据：\n{self._evidence_digest()}\n"
             "要求：只为能解释告警的缺口补充必要事实；相同失败参数不要重复请求；"
             "无法用现有工具满足的需求写入 unmet_requests，不要编造替代数据。"
         )
@@ -1673,7 +1702,7 @@ class _Run:
             "new_hypotheses。\n"
             "不得写入未在证据中出现的事实，也不得重复已有解释。\n"
             f"当前假设：\n{listed}\n"
-            f"已有查询记录：\n{self._evidence_digest()}\n"
+            f"已有现场查询与证据：\n{self._evidence_digest()}\n"
             "若现有数据不足以形成有依据的解释，两个数组都可以为空。"
         )
 
@@ -1700,15 +1729,19 @@ class _Run:
             "explanation；gaps 每项为 question、why_it_matters。\n"
             "hypothesis_relations 每项为 from_hypothesis_id、to_hypothesis_id、relation_type"
             "（causal_link 或 competing）、explanation、evidence_ids。\n"
-            "incident_conclusion 为 conclusion_status、root_cause、stop_reason、explanation；"
-            "confirmed 必须给出具体 root_cause 且 stop_reason=root_cause_confirmed，"
-            "unconfirmed 的 root_cause 必须为 null。\n"
+            "incident_conclusion 为 conclusion_status、root_cause、stop_reason、explanation；\n"
+            "stop_reason 只能取 root_cause_confirmed、budget_exhausted、"
+            "critical_data_unavailable 或 null；调查继续（next_step.action 不是 finalize）时"
+            "必须为 null。\n"
+            "confirmed 必须给出具体 root_cause 且 stop_reason=root_cause_confirmed；"
+            "unconfirmed 的 root_cause 必须为 null，选择 finalize 时要用 budget_exhausted 或"
+            "critical_data_unavailable 说明停止原因。\n"
             "next_step 为 action、reason、requests（每项 hypothesis_ids 与 requirement）。\n"
             f"{phase_note}\n"
             "确认根因必须同时具备具体原因、对象/时间/机制证据、无关键反证或主要未决竞争解释；"
             "工具成功、单个 supported 或数值评分都不能作为确认依据。\n"
             f"当前假设：\n{hypotheses}\n"
-            f"已有查询记录：\n{self._evidence_digest()}\n"
+            f"已有现场查询与证据：\n{self._evidence_digest()}\n"
             f"本轮可用证据 ID：{json.dumps(self._evidence_ids(), ensure_ascii=False)}"
         )
 
@@ -1729,7 +1762,7 @@ class _Run:
             f"程序记录的结论状态：{conclusion.conclusion_status if conclusion else 'unconfirmed'}；"
             f"根因：{conclusion.root_cause if conclusion and conclusion.root_cause else '未确认'}\n"
             f"假设：{hypotheses}\n"
-            f"查询记录：{self._evidence_digest()}\n"
+            f"现场查询与证据：{self._evidence_digest()}\n"
             f"未满足需求：{unmet}\n"
             f"已知局限：{json.dumps(list(facts.limitations), ensure_ascii=False)}"
         )
