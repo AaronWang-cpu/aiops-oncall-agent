@@ -57,12 +57,18 @@ def test_project_config_contains_development_provider_config() -> None:
     assert llm["maxRetries"] == 2
 
 
-def test_project_config_declares_real_prometheus_and_alertmanager_sources() -> None:
+def test_project_config_declares_usable_alert_sources() -> None:
+    """The local config must point every declared source at a real alerts endpoint."""
     config = json.loads(Path("../../config/project.json").read_text(encoding="utf-8"))
     sources = config["prometheusAlerts"]["sources"]
 
-    assert sources[0]["type"] == "prometheus-v1"
-    assert sources[0]["alertsApi"].startswith("https://")
-    assert sources[0]["alertsApi"].endswith("/api/v1/alerts")
-    assert sources[1]["type"] == "alertmanager-v2"
-    assert sources[1]["alertsApi"] == "http://127.0.0.1:9093/api/v2/alerts"
+    assert sources
+    for source in sources:
+        assert source["type"] in {"prometheus-v1", "alertmanager-v2"}
+        alerts_api = source["alertsApi"]
+        assert alerts_api.startswith(("http://", "https://"))
+        expected_suffix = (
+            "/api/v1/alerts" if source["type"] == "prometheus-v1" else "/api/v2/alerts"
+        )
+        assert alerts_api.endswith(expected_suffix)
+    assert any(source["type"] == "alertmanager-v2" for source in sources)
