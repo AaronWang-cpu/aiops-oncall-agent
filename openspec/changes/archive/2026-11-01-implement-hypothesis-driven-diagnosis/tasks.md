@@ -1,4 +1,4 @@
-﻿# Tasks
+# Tasks
 
 状态：用户已授权按已确认规格完成项目，并允许新功能分支及分阶段本地提交；不推送、不合并、不改写历史。下列 checkbox 仅在对应实现及验证完成后勾选。阶段对应 `design.md` 的 P1-P6；全部完成后才具备归档条件。
 
@@ -66,9 +66,9 @@ P5 验收边界：本阶段完成前端新旧兼容展示、假设与事故结�
 - [x] 6.2 完成跨 owner API/Repository/引用/游标及脱敏集成测试；验证本地配置、日志、token 与云凭据不出现在事件、报告、测试固化或 Git diff 中。
 - [x] 6.3 回归聊天、知识检索/索引、MCP 管理及独立案例保存；运行后端 `uv run pytest`、`uv run ruff check .`、`uv run pyright` 与前端/共享包全套验证，失败保留原因，不 skip 或删断言。
 - [x] 6.4 按实际完成状态同步 README、配置和运行说明；验证新旧入口、模式、时间、报告/错误行为与代码一致，不声明未接入真实指标/变更已完成。
-- [ ] 6.5 核对全部 delta 与主规格的适用边界，准备审批后的同步/归档清单；运行 `openspec validate --all` 与 `npm run docs:build`，所有上述实现任务完成后再请用户确认。
+- [x] 6.5 核对全部 delta 与主规格的适用边界，准备审批后的同步/归档清单；运行 `openspec validate --all` 与 `npm run docs:build`，所有上述实现任务完成后再请用户确认。
 
-P6 验收边界：本阶段新增 `test_diagnosis_integration.py`（6 项）贯通 Mock 场景经 HTTP/SSE 与证据链回载、真实传输替身无自动重试且不回退、排队取消、跨 owner 游标与证据链隔离、凭据脱敏。后端全量 `uv run pytest` 收集 361 项，10 项失败为本地环境既有问题（Milvus 未启动 6、`bash` 不可用 1、本地配置与模板期望不符 3）；`uv run ruff check .` 212 项与 `uv run pyright` 9 项全部位于既有模块，未 skip 或放宽断言。前端、共享契约、`openspec validate --all`（43 项）与 `docs:build` 全部通过。6.5 的主规格同步/归档、本机启动与浏览器体检仍需用户授权；`config/project.json` 与 `config/user.project.json` 自基线被 Git 跟踪，与 README 和既有测试期望不符，等待用户决定是否取消跟踪。
+P6 验收边界：本阶段新增 `test_diagnosis_integration.py`（6 项）贯通 Mock 场景经 HTTP/SSE 与证据链回载、真实传输替身无自动重试且不回退、排队取消、跨 owner 游标与证据链隔离、凭据脱敏。后端全量 `uv run pytest` 收集 361 项，10 项失败为本地环境既有问题（Milvus 未启动 6、`bash` 不可用 1、本地配置与模板期望不符 3）；`uv run ruff check .` 212 项与 `uv run pyright` 9 项全部位于既有模块，未 skip 或放宽断言。前端、共享契约、`openspec validate --all` 与 `docs:build` 全部通过。用户已授权：`config/project.json` 与 `config/user.project.json` 加入忽略并取消跟踪（本地文件保留），delta 已应用到主规格并归档本 change，WIKI 页面迁移到 archive；本机启动与浏览器体检另行执行。`config/project.template.json` 仍保留 `minioadmin` 等本地开发默认值，与 `test_environment_examples.py` 的模板脱敏期望不一致，属基线遗留，需用户确认后再改。
 
 ## 验收映射
 

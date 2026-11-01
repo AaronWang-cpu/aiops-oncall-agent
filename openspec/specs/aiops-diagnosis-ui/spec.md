@@ -3,7 +3,9 @@
 ## Purpose
 
 为启动真实流式Vue诊断并检查其服务器持久化报告和证据链定义经过身份验证的Vue工作区。
+
 ## Requirements
+
 ### Requirement: Authenticated AIOps diagnosis entry
 前端 SHALL 提供一个经过身份验证的中文 `/aiops` 工作区，该工作区通过共享的 AIOps 合同从必需的事件查询和可选的结构化警报对象创建 API 诊断。
 
@@ -20,19 +22,19 @@
 - **THEN** 前端 MUST 阻止提交并显示清晰的中文本地验证消息。
 
 ### Requirement: Live evidence-backed diagnostic progress
-AIOps 工作区 SHALL 将后端的通用 SSE 诊断事件作为有序的实时中文活动流呈现，而不添加步骤、工具、证据、进展或结论。
+工作区 SHALL 按持久 SSE 展示真实阶段、工具、判断及终态，不添加虚构进展。诊断 error 后仍消费至 complete；最终成功、失败、取消由任务状态决定，而非报告或 complete 是否存在。
 
 #### Scenario: Diagnostic phase advances
-- **WHEN** 后端在规划、执行、重新规划或报告时会发出 `task.status` 事件  
-- **THEN** 前端 MUST 按照时间顺序显示返回的状态、存在的进度以及消息，并带有中文生命周期标签。
+- **WHEN** 新七阶段或旧阶段进度到达
+- **THEN** MUST 按序显示中文状态和后端消息，不静默过滤未知阶段。
 
 #### Scenario: Backend invokes a tool or retrieves a source
-- **WHEN** 后端会发出 `tool.call` 或 `reference.source` 事件
-- **THEN** 前端 MUST 使用返回内容在可展开的上下文区域中显示工具生命周期或源引用。
+- **WHEN** 收到 tool.call 或 reference.source
+- **THEN** MUST 展示返回的生命周期/引用，可展开详情，不能推断没有提供的内容。
 
 #### Scenario: Backend produces a report or error
-- **WHEN** 后端发出 `report`、`complete` 或 `error` 事件  
-- **THEN** 前端 MUST 显示返回的报告或规范化的中文错误，并将所选任务与其持久化的证据链进行协调。
+- **WHEN** 收到 report、error、task.status、complete
+- **THEN** MUST 保留报告及安全错误，依据最终任务状态协调证据链；error 不提前丢弃后续终态事件。
 
 ### Requirement: Diagnostic history and evidence chain
 AIOps 工作区 SHALL 列出当前 user 的持久化诊断历史，并为选定任务公开完整的、由服务器支持的证据链。
@@ -76,19 +78,19 @@ AIOps 工作区 SHALL 使用专业的中文 AI 运维诊断控制台布局，突
 - **THEN** 输入、时间线、证据、报告和历史区域 MUST 重新排列为单列或可读的纵向结构，MUST NOT 出现横向页面溢出。
 
 ### Requirement: Centered persistent diagnostic report
-AIOps 工作区 SHALL 在中间主区域将实时诊断过程和最终持久化报告组织为连续的诊断主叙事，并在任务完成后将报告作为主要阅读内容展示。
+中间主区域 SHALL 连续呈现诊断过程和纯 Markdown 报告，覆盖新旧阶段，终态后报告为主要阅读内容；失败有兜底报告时仍明确显示失败。
 
 #### Scenario: Diagnosis is still running
-- **WHEN** Planner、Executor、Replanner 或 Report 节点仍在执行
-- **THEN** 中间区域 MUST 显示当前过程和报告等待/生成状态，MUST NOT 留下无法解释的空白区域
+- **WHEN** 新七阶段或历史阶段仍运行
+- **THEN** MUST 显示真实进度及报告等待/生成状态，不出现无法解释的空白。
 
 #### Scenario: Live report arrives
-- **WHEN** SSE 流收到 `report` 事件但持久化证据链尚未回载
-- **THEN** 中间区域 MUST 立即显示该 Markdown 报告
+- **WHEN** 收到 report 而证据链尚未回载
+- **THEN** MUST 立即呈现 Markdown，同时不把 task 提前改 succeeded。
 
 #### Scenario: Persisted diagnosis is selected
-- **WHEN** 操作员选择包含一个或多个持久化报告的历史诊断
-- **THEN** 中间区域 MUST 显示最新报告的标题、生成时间和完整 Markdown 正文
+- **WHEN** 历史任务已有报告
+- **THEN** MUST 显示最新报告、标题和时间，保留失败/取消以及历史数据模式信息。
 
 ### Requirement: Readable long-form Markdown report
 最终诊断报告 SHALL 使用适合中文长文阅读的层级、间距和数据表格样式，并限制溢出范围。
@@ -102,23 +104,23 @@ AIOps 工作区 SHALL 在中间主区域将实时诊断过程和最终持久化�
 - **THEN** 报告正文、元数据和操作区域 MUST 纵向重排并保持可读，页面 MUST NOT 水平溢出
 
 ### Requirement: Compact AIOps execution chain presentation
-AIOps 工作区右栏 SHALL 以持久化 Planner、Executor 和 Replanner 步骤构成紧凑执行链，并将工具调用作为独立的可折叠列表展示。
+右栏 SHALL 展示新七阶段及旧历史步骤、假设判断和可折叠工具，未知节点显示原名。前端摘要不回流成为推理唯一证据，MUST 保持紧凑及可追溯。
 
 #### Scenario: Persisted steps are available
-- **WHEN** 选中诊断包含 Planner、Executor 或 Replanner 步骤
-- **THEN** 右栏 MUST 按执行顺序显示每一步的一句话中文标题和缩进输出，MUST NOT 显示独立原始 evidence 列表
+- **WHEN** 新旧持久步骤存在
+- **THEN** MUST 按序显示中文标题和缩进输出，不仅过滤 planner/executor/replanner，也不展示独立大量原始 JSON 列表。
 
 #### Scenario: Tool calls are available
-- **WHEN** 选中诊断包含工具调用审计
-- **THEN** 右栏 MUST 默认只显示工具名和状态，工具输出 MUST 位于默认收起的缩进详情框中
+- **WHEN** 存在工具审计
+- **THEN** MUST 默认只显示工具名和状态，详情收起。
 
 #### Scenario: Tool output contains structured records
-- **WHEN** 工具结果摘要包含 SearchLog records、知识检索结果或其他 JSON 结构
-- **THEN** 前端 MUST 将其转换为有限的可读文本摘要，MUST NOT 直接展示 JSON 字符串、原始 payload 或证据 ID
+- **WHEN** 结果摘要包含结构化 records
+- **THEN** MUST 转成可读有限摘要，不直接以 JSON、payload 或裸 ID 充当正文；完整结果保持后端可追溯。
 
 #### Scenario: Live tool event arrives
-- **WHEN** 实时时间线收到包含 output 的 `tool.call` 事件
-- **THEN** 时间线 MUST 只展示工具生命周期和状态，MUST NOT 重复展示工具输出正文
+- **WHEN** tool.call 包含 output
+- **THEN** 时间线 MUST 只展示生命周期，避免重复展示完整工具正文。
 
 ### Requirement: Long reports scroll inside the fixed diagnosis workspace
 智能诊断桌面工作区 SHALL 保持受桌面视口约束的固定高度，最终报告过长时 MUST 在报告正文区域内部纵向滚动，不得继续撑高整个浏览器页面。
@@ -137,3 +139,36 @@ AIOps 工作区 SHALL 允许用户评价执行步骤和最终报告，并支持�
 #### Scenario: 用户评价报告
 - **WHEN** 用户提交报告反馈
 - **THEN** 状态 MUST 立即显示为已保存且历史任务重新打开后仍可恢复。
+
+### Requirement: Hypotheses and incident conclusions are displayed separately
+新任务 SHALL 明确展示假设状态、依据、关键缺口及事故级确认/停止原因，不将 supported 直接显示为事故根因。旧任务无这些字段不得生成占位假设或伪造判断。
+
+#### Scenario: Hypothesis is supported but cause is unconfirmed
+- **WHEN** 假设 supported 而事故 unconfirmed
+- **THEN** MUST 显示“具体根因尚未确认”，root_cause 不填疑似原因。
+
+#### Scenario: Historical assessment is no longer current
+- **WHEN** 后端标记判断来自历史快照且存在未评估修改
+- **THEN** MUST 区分此前判断及当前内容，不混用新解释与旧结论。
+
+### Requirement: Visible mock and terminal-state boundaries
+工作区 SHALL 显示后端提供的模拟模式、失败和取消信息，不将模拟确认表述为真实生产确认，不因程序兜底报告存在掩盖失败。
+
+#### Scenario: Mock scenario confirms a cause
+- **WHEN** 模拟场景形成有效 confirmed
+- **THEN** MUST 标识模拟场景内确认，不禁止该分支，也不冒充真实事故结论。
+
+#### Scenario: Core execution failed with a saved report
+- **WHEN** 后端返回 failed 和兜底
+- **THEN** MUST 同时显示失败状态与报告，不改 succeeded。
+
+#### Scenario: New content appears on a narrow screen
+- **WHEN** 窄屏展示假设、关系、工具和报告
+- **THEN** MUST 保持纵向可读、无页面水平溢出，遵守既有滚动及 reduced-motion 行为。
+
+### Requirement: Diagnostic stream replay is deduplicated
+前端 SHALL 保存订阅游标并按事件 ID 去重，在断线或无 complete 的 EOF 后回载持久状态/重连，不能丢弃错误后的终态。
+
+#### Scenario: Replayed event is received
+- **WHEN** 重连收到已见报告/错误事件
+- **THEN** MUST 仅显示一次，继续处理后续状态，不重新启动诊断。

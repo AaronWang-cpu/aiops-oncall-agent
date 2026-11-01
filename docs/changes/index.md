@@ -6,10 +6,11 @@ title: OpenSpec 变更
 
 ## 进行中
 
-- [implement-hypothesis-driven-diagnosis](/changes/active/implement-hypothesis-driven-diagnosis/)
+当前没有进行中的变更。
 
 ## 已归档
 
+- [implement-hypothesis-driven-diagnosis](/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/)
 - [use-positive-idf-bm25](/changes/archive/2026-07-11-use-positive-idf-bm25/)
 - [show-retrieval-stage-ranks](/changes/archive/2026-07-11-show-retrieval-stage-ranks/)
 - [remove-project-config-from-git-history](/changes/archive/2026-07-11-remove-project-config-from-git-history/)

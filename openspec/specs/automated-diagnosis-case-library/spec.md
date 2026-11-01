@@ -6,31 +6,16 @@
 
 ## Requirements
 
-### Requirement: Automatic structured diagnosis case persistence
-后端为每个成功完成的 AIOps 诊断（带有最终报告）创建一个 owner 范围的结构化诊断案例，并且当 SHALL 时不会为失败的诊断创建案例。
-
-#### Scenario: Diagnostic succeeds
-- **WHEN** 报告节点会保留成功的最终报告
-- **THEN** 后端 MUST 会保留与任务、报告、证据 ID、生成的知识文档和索引任务相关联的案例，包括警报名称、服务、关键词、根本原因字段、纠正措施字段和摘要。
-
-#### Scenario: Diagnostic fails
-- **WHEN** 诊断在成功最终报告之前失败
-- **THEN** 后端 MUST NOT 为该失败任务创建诊断案例、知识文档、索引任务或向量数据
-
-#### Scenario: Successful task is processed more than once
-- **WHEN** 案例持久化重新进入相同的 owner 和任务
-- **THEN** 后端 MUST 返回现有的案例和 MUST NOT 创建重复的案例文档或索引任务。
-
 ### Requirement: Case knowledge indexing and retrieval traceability
-后端 SHALL 通过现有的文档流程对自动创建的用例进行索引，并保留对结构化用例字段的可追溯性。
+已有独立案例/知识保存功能 SHALL 继续使用现有文档与持久索引流程，保留 owner、tenant 及诊断来源。新闭环成功 MUST NOT 自动触发这些功能，未确认结论不得伪装成经验证知识。
 
 #### Scenario: Case is indexed
-- **WHEN** 会自动生成一个用例
-- **THEN** 后端 MUST 使用包含 owner、tenant 和 `diagnostic-case` 分类元数据的文档，异步创建并安排标准索引任务。
+- **WHEN** 独立功能显式创建案例知识文档
+- **THEN** MUST 保留 owner、tenant、知识分类及来源，并经标准后台索引流程处理，不在诊断请求内另建索引机制。
 
 #### Scenario: Indexing fails
-- **WHEN** 自动用例索引失败
-- **THEN** 结构化用例及其关联的文档/索引任务 MUST 在标准索引失败状态下仍可通过 owner 查询。
+- **WHEN** 独立索引失败
+- **THEN** 关联文档/任务及已有案例 MUST 保留可查询失败状态，不丢失来源。
 
 ### Requirement: Owner-scoped diagnosis case library
 系统 SHALL 提供经过身份验证的案例列表和 AIOps 展示，该展示仅显示当前 user 的结构化诊断案例。
@@ -42,3 +27,14 @@
 #### Scenario: Other user attempts case access
 - **WHEN** 一个 user 请求属于另一个 user 的案例
 - **THEN** 后端 MUST 返回统一的授权错误，不暴露案例字段或关联的工件。
+
+### Requirement: New diagnosis does not automatically create knowledge
+新诊断 SHALL 只保存调查及报告；成功、失败、取消与恢复均 MUST NOT 自动创建案例、知识文档、索引任务或向量。
+
+#### Scenario: New diagnosis succeeds
+- **WHEN** 新图完成并保存报告
+- **THEN** MUST 没有自动沉淀副作用，历史案例列表保持已有数据。
+
+#### Scenario: Terminal recovery repeats
+- **WHEN** 已完成诊断恢复补交付
+- **THEN** MUST 不自动调用案例保存或索引，亦不删除旧案例。

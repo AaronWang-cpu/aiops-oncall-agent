@@ -2,10 +2,10 @@
 import { defineConfig } from "vitepress";
 
 const activeItems = [
-  { text: "implement-hypothesis-driven-diagnosis", link: "/changes/active/implement-hypothesis-driven-diagnosis/" },
 ];
 
 const archivedItems = [
+  { text: "implement-hypothesis-driven-diagnosis", link: "/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/" },
   { text: "use-positive-idf-bm25", link: "/changes/archive/2026-07-11-use-positive-idf-bm25/" },
   { text: "show-retrieval-stage-ranks", link: "/changes/archive/2026-07-11-show-retrieval-stage-ranks/" },
   { text: "remove-project-config-from-git-history", link: "/changes/archive/2026-07-11-remove-project-config-from-git-history/" },

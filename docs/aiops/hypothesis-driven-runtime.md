@@ -1,6 +1,6 @@
 # 假设驱动诊断运行说明
 
-关联变更：[implement-hypothesis-driven-diagnosis](/changes/active/implement-hypothesis-driven-diagnosis/)。
+关联变更：[implement-hypothesis-driven-diagnosis](/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/)（已归档）。
 
 ## 实施状态
 
