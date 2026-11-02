@@ -10,6 +10,7 @@ title: OpenSpec 变更
 
 ## 已归档
 
+- [switch-default-chat-model-to-deepseek](/changes/archive/2026-11-02-switch-default-chat-model-to-deepseek/)
 - [alert-driven-mock-demo](/changes/archive/2026-11-02-alert-driven-mock-demo/)
 - [trim-workspace-and-redesign-diagnosis-ui](/changes/archive/2026-11-02-trim-workspace-and-redesign-diagnosis-ui/)
 - [implement-hypothesis-driven-diagnosis](/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/)

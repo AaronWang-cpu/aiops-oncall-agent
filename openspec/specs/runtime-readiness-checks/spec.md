@@ -26,14 +26,14 @@
 
 #### Scenario: Backend health succeeds
 - **WHEN** 前端可以获取轻量级 `/health` 端点
-- **THEN** 工作区标题 MUST 渲染连接状态，且响应 MUST 不依赖 SQLite、Milvus、Qwen 或 MCP 的可用性。
+- **THEN** 工作区标题 MUST 渲染连接状态，且响应 MUST 不依赖 SQLite、Milvus、配置的模型供应商或 MCP 的可用性。
 
 #### Scenario: Backend health fails
 - **WHEN** 前端无法获取成功的轻量级 health 响应
 - **THEN** 工作区标题 MUST 会渲染为降级状态，但不会阻止已认证的工作区路由加载。
 
 ### Requirement: Safe configuration diagnostics
-后端 SHALL 暴露了一个未经身份验证的类型化 `/config/check` 端点，该端点验证跟踪的配置并为 SQLite、Milvus、Qwen 和 MCP 报告安全依赖项诊断信息。
+后端 SHALL 暴露了一个未经身份验证的类型化 `/config/check` 端点，该端点验证跟踪的配置并为 SQLite、Milvus、配置的模型供应商和 MCP 报告安全依赖项诊断信息。
 
 #### Scenario: Configuration and dependencies are valid
 - **WHEN** 所有需要跟踪的配置部分都已解析，且每个依赖项都可用

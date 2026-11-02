@@ -5,6 +5,7 @@ const activeItems = [
 ];
 
 const archivedItems = [
+  { text: "switch-default-chat-model-to-deepseek", link: "/changes/archive/2026-11-02-switch-default-chat-model-to-deepseek/" },
   { text: "alert-driven-mock-demo", link: "/changes/archive/2026-11-02-alert-driven-mock-demo/" },
   { text: "trim-workspace-and-redesign-diagnosis-ui", link: "/changes/archive/2026-11-02-trim-workspace-and-redesign-diagnosis-ui/" },
   { text: "implement-hypothesis-driven-diagnosis", link: "/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/" },

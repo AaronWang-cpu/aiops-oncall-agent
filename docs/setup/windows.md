@@ -49,4 +49,4 @@ Copy-Item config/project.template.json config/project.json
 Copy-Item config/user.project.template.json config/user.project.json
 ```
 
-在本地配置中填写或核对 Qwen API Key、CLS `secretId`/`secretKey`、`region`、`logsetId`、`topicId` 和本机地址。字段说明见[配置与运维教程](../operations-and-monitoring.md)。
+在本地配置中填写或核对聊天模型密钥（默认 DeepSeek）、嵌入与重排使用的百炼密钥、CLS `secretId`/`secretKey`、`region`、`logsetId`、`topicId` 和本机地址。字段说明见[配置与运维教程](../operations-and-monitoring.md)。

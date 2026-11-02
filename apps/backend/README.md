@@ -26,20 +26,26 @@ uv run uvicorn super_ai.api:create_app --factory --reload
 ## LLM 提供者
 
 后端在 `src/super_ai/llm` 下使用可替换的 LLM 提供商抽象。
-默认提供程序是 `QwenOpenAIProvider`，由 LangChain 的 OpenAI-compatible 支持
+默认提供程序是 `OpenAICompatibleProvider`，由 LangChain 的 OpenAI-compatible 支持
 `ChatOpenAI`。
 
-跟踪的 Qwen 默认值位于 `config/project.json` 的 `llm` 部分下：
+跟踪的默认值位于 `config/project.json` 的 `llm` 部分下：
 
-- `baseUrl`: `https://dashscope.aliyuncs.com/compatible-mode/v1`
-- `chatModel`: `qwen3.7-max`
+- `provider`: `deepseek-openai`
+- `baseUrl`: `https://api.deepseek.com/v1`
+- `chatModel`: `deepseek-flash`
 - `embeddingModel`: `text-embedding-v4`
 - `embeddingDimensions`: `1024`
+- `embeddingBaseUrl`: 嵌入与重排使用的端点，缺省复用 `baseUrl`
 - `rerankModel`: `qwen3-vl-rerank`
 - `temperature`: `0.2`
-- `timeoutSeconds`: `30`
+- `timeoutSeconds`: `120`
 - `maxRetries`: `2`
-- `apiKey`: 私有仓库开发密钥
+- `apiKey`: 聊天模型密钥；`embeddingApiKey` 与 `rerankApiKey` 缺省复用它
+
+聊天模型与嵌入、重排能力可以分属不同供应商：`baseUrl`/`apiKey` 决定聊天端点，
+`embeddingBaseUrl`/`embeddingApiKey` 决定嵌入端点，重排沿用 `rerankUrl` 与
+`rerankApiKey`。
 
 后端不会读取本地环境变量中的提供者设置。
 

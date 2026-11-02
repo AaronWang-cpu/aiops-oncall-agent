@@ -98,7 +98,7 @@ Windows 使用 `scripts\start-local.bat`。不要引入 Poetry、PDM、pip-tools
 - API 保持统一成功/错误 envelope 和错误目录；不要在新路由中发明另一种响应格式。
 - 长任务使用现有 durable background job runtime，保留任务、事件、租约、重试、超时和取消语义；不要用请求内裸 `asyncio.create_task()` 代替持久任务。
 - 聊天流和诊断流保持现有 SSE 事件契约、顺序、终止和错误语义。任何事件字段变更都必须同步共享契约、前端解析器和合同测试。
-- LLM 仅使用 `langchain-openai` 的 OpenAI-compatible Qwen/Bailian 配置。聊天沿用 `langchain` `create_agent`，AIOps 图沿用 LangGraph；替换核心编排方式必须先形成明确设计。
+- LLM 仅使用 `langchain-openai` 的 OpenAI-compatible 配置：聊天默认走 DeepSeek（`deepseek-flash`），嵌入与重排默认仍走阿里云百炼，两者通过 `llm.embeddingBaseUrl`/`llm.embeddingApiKey`/`llm.rerankApiKey` 拆分端点与凭据。聊天沿用 `langchain` `create_agent`，AIOps 图沿用 LangGraph；替换核心编排方式必须先形成明确设计。
 - 知识检索沿用 Milvus 向量召回、BM25L、RRF 和 rerank 的现有管线。不要删除可解释排名字段，不能在无命中时伪造引用。
 - MCP 必须调用用户启用的真实连接与真实工具，遵守超时、重试、同名工具保护和审计要求。
 

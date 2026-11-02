@@ -3,9 +3,11 @@
 ## Purpose
 
 定义经过身份验证的、由 Agent 驱动的流式 RAG 聊天流程，该流程允许模型决定是否使用工具，发出共享的 SSE 事件，并将聊天消息持久化到后端内存中。
+
 ## Requirements
+
 ### Requirement: Agent-driven streaming chat
-后端 SHALL 进程通过配置的 LangChain `create_agent` Agent 使用 Qwen 聊天模型和可用的 LangChain 工具进行认证聊天。
+后端 SHALL 进程通过配置的 LangChain `create_agent` Agent 使用配置的聊天模型和可用的 LangChain 工具进行认证聊天。
 
 #### Scenario: Chat uses configured Agent
 - **WHEN** 已认证的 user 向聊天会话发送聊天消息
