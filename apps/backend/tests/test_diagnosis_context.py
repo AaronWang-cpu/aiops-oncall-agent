@@ -177,14 +177,20 @@ def test_missing_mock_scenario_file_fails_preparation() -> None:
 
 @pytest.mark.parametrize(
     "scenario_name",
-    ["order-pool-exhaustion.json", "payment-gateway-timeout-with-distractors.json"],
+    [
+        "order-pool-exhaustion.json",
+        "payment-gateway-timeout-with-distractors.json",
+        "checkout-peak-incident.json",
+    ],
 )
 def test_scenario_snapshot_is_factual_and_timezone_aware(scenario_name: str) -> None:
     context = prepare_diagnosis_context(_mock_config(scenario_name))
     scenario = context.scenario
     assert scenario is not None
 
-    assert scenario.alert.starts_at.endswith("Z")
+    for alert in scenario.alerts:
+        assert alert.starts_at.endswith("Z")
+        assert alert.name and alert.service and alert.severity
     assert scenario.logs and scenario.metrics and scenario.changes
     for record in [*scenario.logs, *scenario.metrics, *scenario.changes]:
         assert record.timestamp.endswith("Z")
@@ -197,7 +203,11 @@ def test_scenario_snapshot_is_factual_and_timezone_aware(scenario_name: str) -> 
 
 @pytest.mark.parametrize(
     "scenario_name",
-    ["order-pool-exhaustion.json", "payment-gateway-timeout-with-distractors.json"],
+    [
+        "order-pool-exhaustion.json",
+        "payment-gateway-timeout-with-distractors.json",
+        "checkout-peak-incident.json",
+    ],
 )
 def test_scenario_files_contain_no_answers_or_eval_assets(scenario_name: str) -> None:
     text = (SCENARIO_DIR / scenario_name).read_text(encoding="utf-8")
@@ -208,11 +218,26 @@ def test_scenario_files_contain_no_answers_or_eval_assets(scenario_name: str) ->
     assert "eval_results" not in text
 
 
-def test_scenario_keeps_a_single_alert_object() -> None:
+def test_scenario_keeps_alerts_as_an_addressable_list() -> None:
     payload = json.loads((SCENARIO_DIR / "order-pool-exhaustion.json").read_text(encoding="utf-8"))
 
-    assert set(payload) == {"alert", "logs", "metrics", "changes"}
-    assert set(payload["alert"]) == {"service", "instance", "starts_at", "summary"}
+    assert set(payload) == {"alerts", "logs", "metrics", "changes"}
+    assert payload["alerts"]
+    for alert in payload["alerts"]:
+        assert set(alert) == {"name", "service", "instance", "severity", "starts_at", "summary"}
+
+
+def test_scenario_without_alerts_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "empty-alerts.json"
+    path.write_text(
+        json.dumps({"alerts": [], "logs": [], "metrics": [], "changes": []}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DiagnosisContentError):
+        prepare_diagnosis_context(
+            DiagnosisConfig(mode="mock", mockScenarioPath=str(path)),
+        )
 
 
 def test_knowledge_template_is_empty_and_secret_free() -> None:

@@ -30,6 +30,7 @@ from starlette.responses import Response
 
 from super_ai.aiops import AiopsDiagnosticService
 from super_ai.aiops.diagnosis_config import load_diagnosis_config
+from super_ai.aiops.mock_alerts import build_scenario_alert_provider
 from super_ai.alerts import (
     ActiveAlert,
     ActiveAlertProvider,
@@ -2148,8 +2149,13 @@ def _mcp_client(request: Request) -> LocalMcpClient:
 def _active_alert_provider(request: Request) -> ActiveAlertProvider:
     provider = cast(ActiveAlertProvider | None, request.app.state.alert_provider)
     if provider is None:
-        provider = build_alertmanager_alert_provider(
-            config_path=request.app.state.project_config_path
+        diagnosis = load_diagnosis_config(request.app.state.project_config_path)
+        provider = (
+            build_scenario_alert_provider(diagnosis)
+            if diagnosis.mode == "mock"
+            else build_alertmanager_alert_provider(
+                config_path=request.app.state.project_config_path
+            )
         )
         request.app.state.alert_provider = provider
     return provider

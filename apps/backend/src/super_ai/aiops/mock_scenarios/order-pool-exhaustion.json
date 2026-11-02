@@ -1,10 +1,14 @@
 {
-  "alert": {
-    "service": "order-service",
-    "instance": "order-service-7c9f4d8b5-hxz2q",
-    "starts_at": "2026-03-18T09:12:00Z",
-    "summary": "订单接口 5 分钟错误率超过 8%，P99 延迟 4.5s 超过 SLO"
-  },
+  "alerts": [
+    {
+      "name": "OrderApiHighErrorRate",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "severity": "critical",
+      "starts_at": "2026-03-18T09:12:00Z",
+      "summary": "订单接口 5 分钟错误率超过 8%，P99 延迟 4.5s 超过 SLO"
+    }
+  ],
   "logs": [
     {
       "timestamp": "2026-03-18T08:58:00Z",

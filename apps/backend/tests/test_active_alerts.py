@@ -8,6 +8,8 @@ import pytest
 from alembic import command
 from alembic.config import Config
 
+from super_ai.aiops.diagnosis_config import DiagnosisConfig
+from super_ai.aiops.mock_alerts import build_scenario_alert_provider
 from super_ai.alerts import (
     ActiveAlert,
     AggregatedAlertProvider,
@@ -16,6 +18,8 @@ from super_ai.alerts import (
     PrometheusAlertProvider,
 )
 from super_ai.api.app import create_app
+
+SCENARIO_DIR = Path(__file__).resolve().parents[1] / "src" / "super_ai" / "aiops" / "mock_scenarios"
 
 
 class FakeAlertProvider:
@@ -181,6 +185,33 @@ async def test_active_alert_endpoint_returns_normalized_alerts_for_authenticated
     assert payload["items"][0]["alertName"] == "CheckoutLatencyHigh"
     assert payload["items"][0]["source"] == "test-provider"
     assert payload["items"][0]["context"]["fingerprint"] == "fingerprint-checkout-latency"
+
+
+@pytest.mark.asyncio
+async def test_mock_mode_serves_the_alerts_declared_by_the_scenario() -> None:
+    """A mock run offers the same entry point as a real one: pick an alert, then diagnose."""
+    provider = build_scenario_alert_provider(
+        DiagnosisConfig(
+            mode="mock",
+            mockScenarioPath=str(SCENARIO_DIR / "order-pool-exhaustion.json"),
+        )
+    )
+
+    alerts = await provider.list_active_alerts()
+
+    assert [alert.service for alert in alerts] == ["order-service"]
+    assert alerts[0].alert_name == "OrderApiHighErrorRate"
+    assert alerts[0].severity == "critical"
+    assert alerts[0].status == "active"
+    assert alerts[0].source == "local-scenario"
+    assert alerts[0].starts_at == "2026-03-18T09:12:00Z"
+
+
+def test_scenario_alert_provider_reports_an_unusable_scenario() -> None:
+    with pytest.raises(AlertProviderError):
+        build_scenario_alert_provider(
+            DiagnosisConfig(mode="mock", mockScenarioPath=str(SCENARIO_DIR / "absent.json"))
+        )
 
 
 async def _register(client: httpx.AsyncClient, email: str) -> dict[str, Any]:

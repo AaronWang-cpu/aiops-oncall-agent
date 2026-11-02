@@ -1,10 +1,14 @@
 {
-  "alert": {
-    "service": "payment-service",
-    "instance": "payment-service-6d8f7c9b4-tm4rk",
-    "starts_at": "2026-03-19T14:35:00Z",
-    "summary": "支付接口失败率 10 分钟内升至 12%，下游网关超时增多"
-  },
+  "alerts": [
+    {
+      "name": "PaymentApiHighFailureRate",
+      "service": "payment-service",
+      "instance": "payment-service-6d8f7c9b4-tm4rk",
+      "severity": "critical",
+      "starts_at": "2026-03-19T14:35:00Z",
+      "summary": "支付接口失败率 10 分钟内升至 12%，下游网关超时增多"
+    }
+  ],
   "logs": [
     {
       "timestamp": "2026-03-19T13:10:00Z",

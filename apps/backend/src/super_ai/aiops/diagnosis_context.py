@@ -47,8 +47,12 @@ class ProjectKnowledge(DiagnosisModel):
 
 
 class ScenarioAlert(DiagnosisModel):
+    """One alert a scenario offers as a diagnosis entry point."""
+
+    name: Text
     service: Text
     instance: Text
+    severity: Text
     starts_at: Text
     summary: Text
 
@@ -80,14 +84,17 @@ class ScenarioChange(DiagnosisModel):
 
 
 class MockScenario(DiagnosisModel):
-    alert: ScenarioAlert
+    """A fixed incident snapshot; every alert here is an entry into the same facts."""
+
+    alerts: list[ScenarioAlert] = Field(min_length=1)
     logs: list[ScenarioLog]
     metrics: list[ScenarioMetric]
     changes: list[ScenarioChange]
 
     @model_validator(mode="after")
     def validate_timeline(self) -> MockScenario:
-        timestamp_ms(self.alert.starts_at)
+        for alert in self.alerts:
+            timestamp_ms(alert.starts_at)
         for record in [*self.logs, *self.metrics, *self.changes]:
             timestamp_ms(record.timestamp)
         return self

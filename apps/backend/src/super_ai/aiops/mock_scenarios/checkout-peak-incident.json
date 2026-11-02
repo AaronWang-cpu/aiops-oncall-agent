@@ -1,0 +1,399 @@
+{
+  "alerts": [
+    {
+      "name": "OrderServiceConnectionPoolExhausted",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "severity": "critical",
+      "starts_at": "2026-03-24T10:20:00Z",
+      "summary": "订单服务数据库连接池耗尽，获取连接超时，接口错误率升至 9%，P99 延迟升至 4.5s"
+    },
+    {
+      "name": "PaymentFraudCheckLatencyHigh",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "severity": "critical",
+      "starts_at": "2026-03-24T10:26:00Z",
+      "summary": "支付风控检查 P99 延迟升至 2.4s，占满支付耗时预算，支付接口错误率升至 12%"
+    },
+    {
+      "name": "InventoryLockWaitHigh",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "severity": "warning",
+      "starts_at": "2026-03-24T11:05:00Z",
+      "summary": "库存锁等待 P99 升至 4.2s，出现死锁重试，库存接口错误率升至 9%"
+    }
+  ],
+  "logs": [
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "连接池诊断：池内 SQL 平均耗时 60ms（与告警前一致），单请求持有时长未上升；订单 QPS 640 低于基线 820，按持有时长折算的稳态并发需求约 38 个连接，超过变更后的上限 20，连接获取等待自 10:06 配置下发后出现"
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "依赖观测：mysql-order 慢查询 0 条，活跃会话 12/500，CPU 38%，IO 等待 2%，无未提交长事务；order-service 到 mysql-order 的连接无重传"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "饱和区间观测：10:15 起 active 持续 20、waiting 增长；同期 order-service 客户端统计 payment-service p99 62ms、inventory-service p99 48ms，未出现下游调用超时"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 saturated: total=20 active=20 idle=0 waiting=18；连接获取等待自 10:06 配置下发后持续，池内 SQL 平均耗时仍为 60ms，QPS 640 未突增，按持有时长折算的稳态并发需求约 38，超过当前上限 20"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order-service 实例健康检查通过，本地连接池 active=6 waiting=0"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "WARN",
+      "message": "fraud-check latency p99=2410ms exceeds budget 300ms；client 侧计时：排队 3ms、传输 8ms、fraud-detection-service 处理 2399ms；本次调用命中 ruleChain=device+behavior+ml_v3（v2.7.0 新增）"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "ERROR",
+      "message": "POST /api/pay failed: fraud check timed out after 2400ms, caller=fraud-detection-service"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "external-payment-gateway 响应正常 avg=85ms，超时次数 0，可排除支付网关问题"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2385ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2315ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "resource snapshot: cpu 34%, heap 41%, gc pause 8ms, inflight 12, downstream p99 40ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment-service 实例心跳正常，到 mysql-payment 的连接正常"
+    },
+    {
+      "timestamp": "2026-03-24T11:03:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "WARN",
+      "message": "inventory lock deadlock detected on sku_group=A, rolling back transaction and retrying (attempt=3)；锁获取顺序已切换为 v3.0.0 引入的分段锁顺序（与告警前不同）"
+    },
+    {
+      "timestamp": "2026-03-24T11:04:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "ERROR",
+      "message": "acquire inventory lock timeout after 5000ms, retries=5 exhausted, 库存扣减失败"
+    },
+    {
+      "timestamp": "2026-03-24T11:05:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "INFO",
+      "message": "依赖观测：mysql-order 最长大事务 120ms，CPU 45%，IO 等待 3%，无未提交长事务；innodb 死锁计数随库存扣减重试次数同步上升"
+    },
+    {
+      "timestamp": "2026-03-24T11:06:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "INFO",
+      "message": "inventory-service 实例本地缓存预热完成，读写正常"
+    }
+  ],
+  "metrics": [
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 0.38
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {"endpoint": "/api/orders", "status": "500"},
+      "value": 0.005
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {"endpoint": "/api/orders", "status": "500"},
+      "value": 0.09
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 202.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 4500.0
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 820.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {"endpoint": "/api/orders"},
+      "value": 640.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 120.0
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {"endpoint": "/api/pay"},
+      "value": 150.0
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {"endpoint": "/api/pay"},
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {"endpoint": "/api/pay", "status": "500"},
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {"endpoint": "/api/pay", "status": "500"},
+      "value": 0.12
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {"gateway": "external-payment-gateway"},
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {"gateway": "external-payment-gateway"},
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T11:00:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {"sku_group": "A"},
+      "value": 15.0
+    },
+    {
+      "timestamp": "2026-03-24T11:02:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {"sku_group": "A"},
+      "value": 1800.0
+    },
+    {
+      "timestamp": "2026-03-24T11:04:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {"sku_group": "A"},
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:00:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {"endpoint": "/api/inventory/lock"},
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T11:02:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {"endpoint": "/api/inventory/lock"},
+      "value": 0.05
+    },
+    {
+      "timestamp": "2026-03-24T11:04:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {"endpoint": "/api/inventory/lock"},
+      "value": 0.09
+    }
+  ],
+  "changes": [
+    {
+      "timestamp": "2026-03-24T09:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "change_type": "deployment",
+      "summary": "order-service v4.1.2 发布：优化订单查询 SQL，未调整连接池",
+      "details": {"version": "v4.1.2", "operator": "ci-bot"}
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "change_type": "config_change",
+      "summary": "order-service 配置变更：spring.datasource.hikari.maximumPoolSize 由 100 调整为 20",
+      "details": {
+        "configKey": "spring.datasource.hikari.maximumPoolSize",
+        "fromValue": "100",
+        "toValue": "20",
+        "operator": "dba-bob"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:40:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "change_type": "config_change",
+      "summary": "payment-service 日志采样率由 1.0 调整为 0.5（仅影响日志采集，和故障无关）",
+      "details": {
+        "configKey": "logging.sampleRate",
+        "fromValue": "1.0",
+        "toValue": "0.5",
+        "operator": "sre-amy"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "change_type": "deployment",
+      "summary": "fraud-detection-service 发布 v2.7.0：新增多层风控规则链，检查路径变长",
+      "details": {
+        "version": "v2.7.0",
+        "ruleChain": "device+behavior+ml_v3",
+        "operator": "ci-bot"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:50:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "change_type": "deployment",
+      "summary": "inventory-service 发布 v3.0.0：重构库存锁实现（细粒度分段锁）",
+      "details": {"version": "v3.0.0", "change": "库存锁实现重构", "operator": "ci-bot"}
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "change_type": "traffic_switch",
+      "summary": "cart-service 灰度切流 10% → 50%（与库存锁问题无关）",
+      "details": {"fromPercent": "10", "toPercent": "50", "operator": "sre-dan"}
+    }
+  ]
+}
