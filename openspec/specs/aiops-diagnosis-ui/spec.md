@@ -7,19 +7,19 @@
 ## Requirements
 
 ### Requirement: Authenticated AIOps diagnosis entry
-前端 SHALL 提供一个经过身份验证的中文 `/aiops` 工作区，该工作区通过共享的 AIOps 合同从必需的事件查询和可选的结构化警报对象创建 API 诊断。
+前端 SHALL 提供一个经过身份验证的中文 `/aiops` 工作区；诊断 MUST 由一条确定的活跃告警发起，通过共享的 AIOps 合同把该告警的标准化上下文与标识该告警的查询提交为创建请求，MUST NOT 再提供手工输入诊断问题或告警上下文的入口。
 
 #### Scenario: Operator starts a diagnosis
-- **WHEN** 已认证的操作员输入一个非空的诊断查询并提交表单
-- **THEN** 前端 MUST 通过后端创建诊断，选择返回的任务，启动其类型的 SSE 执行流，并显示中文的准备中或运行中状态。
+- **WHEN** 已认证的操作员选择一条活跃告警并发起诊断
+- **THEN** 前端 MUST 通过后端使用该告警的上下文创建诊断，选择返回的任务，启动其类型的 SSE 执行流，并显示中文的准备中或运行中状态。
 
 #### Scenario: Operator includes alert context
-- **WHEN** 一个操作符提供可选的警报上下文作为 JSON 对象
-- **THEN** 前端 MUST 在创建任务之前将其解析为共享请求格式。
+- **WHEN** 操作员从活跃告警发起诊断
+- **THEN** 前端 MUST 在创建任务之前把该告警的标准化字段与来源上下文放入共享请求格式，MUST NOT 要求操作员手工粘贴告警 JSON。
 
 #### Scenario: Alert context is invalid
-- **WHEN** 可选的警报上下文无效 JSON 或不是对象
-- **THEN** 前端 MUST 阻止提交并显示清晰的中文本地验证消息。
+- **WHEN** 所选告警缺少创建诊断所需字段，或活跃告警列表不可用
+- **THEN** 前端 MUST 阻止发起并显示清晰的中文提示，MUST NOT 用伪造的告警上下文创建诊断。
 
 ### Requirement: Live evidence-backed diagnostic progress
 工作区 SHALL 按持久 SSE 展示真实阶段、工具、判断及终态，不添加虚构进展。诊断 error 后仍消费至 complete；最终成功、失败、取消由任务状态决定，而非报告或 complete 是否存在。
@@ -52,22 +52,22 @@ AIOps 工作区 SHALL 列出当前 user 的持久化诊断历史，并为选定�
 - **THEN** 前端 MUST 显示安全错误，MUST NOT 作为成功当前结果显示过时数据。
 
 ### Requirement: Responsive operational diagnosis workspace
-AIOps 工作区 SHALL 保持中文告警条目、历史记录、实时进展、报告、证据与账本控制在桌面和窄视口宽度下可读且可操作。
+AIOps 工作区 SHALL 保持中文告警条目、历史记录、实时进展、报告、证据与执行链在桌面和窄视口宽度下可读且可操作。
 
 #### Scenario: Operator uses a narrow screen
 - **WHEN** 在窄视口上显示工作区
-- **THEN** 其命令带、中文状态标签、时间线、报告、证据与账本 MUST 重新布局为纵向结构，而不会出现水平页面溢出。
+- **THEN** 其活跃告警、中文状态标签、时间线、报告、证据与执行链 MUST 重新布局为纵向结构，而不会出现水平页面溢出。
 
 ### Requirement: Professional Chinese AIOps console presentation
-AIOps 工作区 SHALL 围绕告警处理组织为命令带、来源列、过程列与检查器列：命令带承载诊断输入，来源列承载告警、历史与案例，过程列承载任务卡、实时过程、执行链与报告，检查器列承载结论与假设、现场证据、调查账本三个视图，并保持与工作区一致的克制视觉语言。
+AIOps 工作区 SHALL 围绕告警处理组织为来源列与诊断列：来源列承载活跃告警与诊断历史，诊断列以单列滚动依次承载任务卡、实时过程、结论与假设、现场证据、执行链与报告，并保持与工作区一致的克制视觉语言。
 
 #### Scenario: Operator opens the diagnosis workspace
 - **WHEN** 已认证的 operator 打开 `/aiops`
-- **THEN** 前端 MUST 在命令带提供诊断输入与告警入口，在过程列提供实时过程与报告，在检查器列提供可切换的结论、证据与账本视图，并以清晰状态标签区分等待中、执行中、成功和失败。
+- **THEN** 前端 MUST 在来源列提供活跃告警与诊断历史，在诊断列提供实时过程、结论与假设、现场证据、执行链与报告，并以清晰状态标签区分等待中、执行中、成功和失败。
 
 #### Scenario: Operator switches inspector views
-- **WHEN** operator 在结论与假设、现场证据、调查账本之间切换
-- **THEN** 前端 MUST 只呈现当前视图内容，三个视图入口 MUST 始终可见，MUST NOT 因视口宽度隐藏任一视图入口。
+- **WHEN** operator 查看诊断列
+- **THEN** 前端 MUST 在同一滚动列中按顺序呈现结论与假设、现场证据、执行链与报告，MUST NOT 再用检查器分页隐藏其中任一部分。
 
 #### Scenario: Diagnostic task is running
 - **WHEN** AIOps 诊断任务正在等待、规划、执行、重规划或生成报告
@@ -79,10 +79,10 @@ AIOps 工作区 SHALL 围绕告警处理组织为命令带、来源列、过程�
 
 #### Scenario: Responsive diagnosis workspace
 - **WHEN** AIOps 工作区在窄视口中显示
-- **THEN** 命令带、来源列、过程列与检查器列 MUST 重新排列为单列或可读的纵向结构，MUST NOT 出现横向页面溢出，也 MUST NOT 隐藏任何信息列。
+- **THEN** 来源列与诊断列 MUST 重新排列为纵向单列结构，MUST NOT 出现横向页面溢出，也 MUST NOT 隐藏任一部分。
 
 ### Requirement: Centered persistent diagnostic report
-过程列 SHALL 连续呈现诊断过程和纯 Markdown 报告，覆盖新旧阶段，终态后报告为主要阅读内容；失败有兜底报告时仍明确显示失败。
+诊断列 SHALL 连续呈现诊断过程和纯 Markdown 报告，覆盖新旧阶段，终态后报告为主要阅读内容；失败有兜底报告时仍明确显示失败。
 
 #### Scenario: Diagnosis is still running
 - **WHEN** 新七阶段或历史阶段仍运行
@@ -108,7 +108,7 @@ AIOps 工作区 SHALL 围绕告警处理组织为命令带、来源列、过程�
 - **THEN** 报告正文、元数据和操作区域 MUST 纵向重排并保持可读，页面 MUST NOT 水平溢出
 
 ### Requirement: Compact AIOps execution chain presentation
-过程列 SHALL 以可折叠区域展示新七阶段及旧历史步骤与工具调用，未知节点显示原名，并把每次工具调用与其写入的持久化证据关联起来，使 operator 能由调用直接打开证据。
+诊断列 SHALL 以可折叠区域展示新七阶段及旧历史步骤与工具调用，未知节点显示原名，并把每次工具调用与其写入的持久化证据关联起来，使 operator 能由调用直接打开证据；执行链内容过长时 MUST 随诊断列一起滚动，MUST NOT 被固定高度容器裁剪隐藏。
 
 #### Scenario: Persisted steps are available
 - **WHEN** 新旧持久步骤存在
@@ -134,15 +134,19 @@ AIOps 工作区 SHALL 围绕告警处理组织为命令带、来源列、过程�
 - **WHEN** tool.call 包含 output
 - **THEN** 时间线 MUST 只展示生命周期，避免重复展示完整工具正文。
 
+#### Scenario: Execution chain exceeds the column height
+- **WHEN** 执行链内容高于诊断列可视高度
+- **THEN** MUST 随诊断列纵向滚动而完整可见，MUST NOT 依赖被裁剪的固定高度网格展示。
+
 ### Requirement: Long reports scroll inside the fixed diagnosis workspace
-智能诊断桌面工作区 SHALL 保持受桌面视口约束的固定高度，过程列的报告正文过长时 MUST 在报告正文区域内部纵向滚动，不得继续撑高整个浏览器页面。
+智能诊断桌面工作区 SHALL 保持受桌面视口约束的固定高度，诊断列 MUST 是统一的可滚动区域；报告正文过长以及其上方区域过长时 MUST 在诊断列内部纵向滚动，不得继续撑高整个浏览器页面。
 
 #### Scenario: Persisted report exceeds the available center height
-- **WHEN** user 打开内容高度超过报告可用区域的历史诊断报告
-- **THEN** AIOps 工作区外框 MUST 保持固定高度，报告标题和元信息 MUST 保持可见，Markdown 正文 MUST 提供独立纵向滚动条
+- **WHEN** user 打开内容高度超过诊断列可视高度的历史诊断报告
+- **THEN** AIOps 工作区外框 MUST 保持固定高度，报告内容 MUST 随诊断列纵向滚动并可完整阅读，MUST NOT 出现被裁剪后又无法滚动到的内容
 
 #### Scenario: Other diagnosis columns contain long content
-- **WHEN** 来源列、实时过程、执行链或检查器超过各自可用高度
+- **WHEN** 来源列或诊断列（含实时过程、执行链、证据与报告）超过各自可用高度
 - **THEN** 对应栏 MUST 在工作区内部滚动且 MUST NOT 增加页面文档高度
 
 ### Requirement: Diagnostic step and report feedback
@@ -186,7 +190,7 @@ AIOps 工作区 SHALL 允许用户评价执行步骤和最终报告，并支持�
 - **THEN** MUST 仅显示一次，继续处理后续状态，不重新启动诊断。
 
 ### Requirement: Evidence inspector presents persisted records
-AIOps 工作区 SHALL 在检查器中按证据类型分组列出本次调查的持久化证据，并允许 operator 打开任一条查看其原始内容；原始内容 MUST 来自后端持久化记录，MUST NOT 用工具审计摘要或模型文本代替。
+AIOps 工作区 SHALL 在诊断列中按证据类型分组列出本次调查的持久化证据，并允许 operator 打开任一条查看其原始内容；原始内容 MUST 来自后端持久化记录，MUST NOT 用工具审计摘要或模型文本代替。
 
 #### Scenario: Operator opens the evidence view
 - **WHEN** 选定任务存在持久化证据
@@ -215,26 +219,3 @@ AIOps 工作区 SHALL 在检查器中按证据类型分组列出本次调查的�
 #### Scenario: Task has no evidence yet
 - **WHEN** 选定任务尚未采集到证据
 - **THEN** MUST 显示明确的空状态，MUST NOT 以占位证据填充
-
-### Requirement: Diagnostic budget and query ledger
-AIOps 工作区 SHALL 展示后端提供的调查额度用量与阶段截止时间，并逐条展示本次调查的查询记录及其结果，使 operator 能核对额度消耗与查询失败原因。
-
-#### Scenario: Operator opens the ledger view
-- **WHEN** 选定任务带有预算与查询记录
-- **THEN** MUST 展示轮次、工具调用与内部往返的已用量与上限，以及探索、分析与总截止时间
-
-#### Scenario: Query failed
-- **WHEN** 某次查询记录为 failed
-- **THEN** MUST 在条目上显示失败状态与后端给出的失败原因
-
-#### Scenario: Operator inspects a query
-- **WHEN** operator 展开某次查询的参数
-- **THEN** MUST 显示该查询的工具名、问题、关联假设与调用参数
-
-#### Scenario: Task has no query records
-- **WHEN** 选定任务没有查询记录
-- **THEN** MUST 显示明确的空状态，MUST NOT 伪造查询条目
-
-#### Scenario: Budget is unavailable
-- **WHEN** 选定任务尚未返回预算信息
-- **THEN** MUST 说明额度信息将在诊断开始后出现，MUST NOT 显示零值用量充当真实数据

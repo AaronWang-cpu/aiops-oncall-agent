@@ -5,6 +5,7 @@ const activeItems = [
 ];
 
 const archivedItems = [
+  { text: "alert-driven-mock-demo", link: "/changes/archive/2026-11-02-alert-driven-mock-demo/" },
   { text: "trim-workspace-and-redesign-diagnosis-ui", link: "/changes/archive/2026-11-02-trim-workspace-and-redesign-diagnosis-ui/" },
   { text: "implement-hypothesis-driven-diagnosis", link: "/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/" },
   { text: "use-positive-idf-bm25", link: "/changes/archive/2026-07-11-use-positive-idf-bm25/" },

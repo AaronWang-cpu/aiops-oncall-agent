@@ -43,7 +43,7 @@
 - **THEN** 脚本 MUST 从 merged 项目配置导出 `TENCENTCLOUD_SECRET_ID`、`TENCENTCLOUD_SECRET_KEY`、`TRANSPORT`、`PORT` 和 `TZ`。
 
 ### Requirement: Explicit isolated mock diagnosis tools
-Mock 诊断 SHALL 由显式配置启用并固定单事故快照；日志、指标及变更只筛选已有场景数据。真实模式 MUST NOT 因失败回退 Mock，未知能力不得临时编造结果。
+Mock 诊断 SHALL 由显式配置启用并固定单事故快照，该快照 MUST 以告警列表声明至少一条告警（各含名称、服务、实例、严重性、开始时间与摘要），同一快照中的多条告警 MUST 指向同一组事实；日志、指标及变更只筛选已有场景数据。真实模式 MUST NOT 因失败回退 Mock，未知能力不得临时编造结果。
 
 #### Scenario: Query window changes within one scenario
 - **WHEN** 对同一场景改变时间窗口补查
@@ -60,6 +60,10 @@ Mock 诊断 SHALL 由显式配置启用并固定单事故快照；日志、指�
 #### Scenario: Scenario is supplied to diagnosis
 - **WHEN** 场景工具向模型返回数据
 - **THEN** MUST 只提供事实快照与查询结果，不包含预设根因、评分或评测答案，任务/报告明确模拟性质。
+
+#### Scenario: Scenario declares the alerts offered to the operator
+- **WHEN** 读取固定的 mock 场景快照
+- **THEN** MUST 接受一条或多条告警声明（至少一条），每条含名称、服务、实例、严重性与开始时间；空告警列表 MUST 作为非法快照被拒绝。
 
 ### Requirement: Diagnostic call failure and correction boundaries
 诊断 SHALL 禁止 SDK、MCP 及任务层自动重复失败调用；合法的模型输出修正最多一次且自身也无自动重试。重复相同失败参数不得仅换 ID 冒充补查。

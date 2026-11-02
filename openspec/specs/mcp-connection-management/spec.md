@@ -2,7 +2,9 @@
 
 ## Purpose
 TBD - created by archiving change manage-mcp-connections. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Owner-scoped MCP connection lifecycle
 用户 SHALL 能创建、查看、更新、启停和删除自己的 MCP 连接，连接包含名称、transport、URL、timeout 和 retries。
 
@@ -27,10 +29,3 @@ TBD - created by archiving change manage-mcp-connections. Update Purpose after a
 #### Scenario: 连接被禁用
 - **WHEN** 用户禁用连接
 - **THEN** 后续 Agent 执行 MUST NOT 加载或调用该连接工具。
-
-### Requirement: Chinese MCP management workspace
-前端 SHALL 提供中文 MCP 管理工作区，展示连接状态、endpoint、transport、工具数量、最近检查和错误，并提供完整编辑操作。
-
-#### Scenario: 检查正在执行
-- **WHEN** 用户检查连接
-- **THEN** 对应连接 MUST 显示检查中，完成后更新真实工具清单或错误。

@@ -84,7 +84,7 @@
 - **THEN** 报告 MUST 明确此前判断与未分析内容，不把旧 supported 或 confirmed 移植到修改后的解释。
 
 ### Requirement: Hypothesis assessment and root cause confirmation
-诊断 SHALL 完整更新全部当前假设及关系，分别判断假设状态、事故级确认和下一动作。确认 MUST 同时具备具体原因、因果链证据、无关键反证或主要未决竞争解释；不得以数值评分或单个 supported 自动确认。
+诊断 SHALL 完整更新全部当前假设及关系，分别判断假设状态、事故级确认和下一动作。确认 MUST 同时具备具体原因、因果链证据、无关键反证或主要未决竞争解释；现有工具无法观测的内部实现（数据库内核、网络链路、第三方服务内部）本身不构成未决竞争解释，已观测机制能解释全部症状且无反证时 MUST 确认并把无法观测的疑问写入 gaps；不得以数值评分或单个 supported 自动确认。评估器提示词 MUST 穷举允许的 hypothesis_status 取值（pending、investigating、supported、contradicted、blocked、unresolved），非法取值 MUST 作为结构校验失败处理，不得静默映射为合法状态。
 
 #### Scenario: Supported symptom is not a confirmed cause
 - **WHEN** 证据仅支持连接池耗尽但不能解释为何耗尽
@@ -101,6 +101,10 @@
 #### Scenario: New evidence warrants reopening
 - **WHEN** 调查进行中新证据或阻碍解除改变旧判断
 - **THEN** 系统 MUST 允许有依据地重新评估，并说明原因；整体终态后不得改写该次调查。
+
+#### Scenario: Assessment prompt enumerates hypothesis statuses
+- **WHEN** 构造评估器提示词
+- **THEN** MUST 列出 pending、investigating、supported、contradicted、blocked、unresolved 六个合法取值，使模型无需猜测枚举；模型给出其它取值时 MUST 作为结构校验失败并按既有修正与收尾规则处理。
 
 ### Requirement: Bounded diagnostic investigation
 诊断 SHALL 执行独立且不可兑换的预算：初始 5 轮、20 次工具、480 秒、两次内部往返，每批/并发最多 4。时间从首次实际开始计，不含排队；恢复 MUST 保留原截止和占用。未知发起状态 MUST 保守保留预算。

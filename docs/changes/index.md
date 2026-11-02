@@ -10,6 +10,7 @@ title: OpenSpec 变更
 
 ## 已归档
 
+- [alert-driven-mock-demo](/changes/archive/2026-11-02-alert-driven-mock-demo/)
 - [trim-workspace-and-redesign-diagnosis-ui](/changes/archive/2026-11-02-trim-workspace-and-redesign-diagnosis-ui/)
 - [implement-hypothesis-driven-diagnosis](/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/)
 - [use-positive-idf-bm25](/changes/archive/2026-07-11-use-positive-idf-bm25/)
