@@ -206,11 +206,15 @@ def migrated_url(tmp_path: Path) -> str:
 
 
 def _config(
-    *, mode: Literal["real", "mock"] = "mock", scenario: str = "order-pool-exhaustion.json"
+    *,
+    mode: Literal["real", "mock"] = "mock",
+    scenario: str = "order-pool-exhaustion.json",
+    knowledge: Path | None = None,
 ) -> DiagnosisConfig:
     return DiagnosisConfig(
         mode=mode,
         mockScenarioPath=str(SCENARIO_DIR / scenario),
+        projectKnowledgePath="" if knowledge is None else str(knowledge),
         maxRounds=2,
         maxToolCalls=6,
         investigationSeconds=300,
@@ -226,6 +230,7 @@ async def _harness(
     *,
     mode: Literal["real", "mock"] = "mock",
     scenario: str = "order-pool-exhaustion.json",
+    knowledge: Path | None = None,
 ) -> Harness:
     engine = create_memory_engine(migrated_url)
     sessions = create_memory_session_factory(engine)
@@ -257,7 +262,7 @@ async def _harness(
     service = AiopsDiagnosticService(
         repositories=repositories,
         llm_provider=cast(Any, provider),
-        config=_config(mode=mode, scenario=scenario),
+        config=_config(mode=mode, scenario=scenario, knowledge=knowledge),
         cls_region="ap-guangzhou",
         cls_topic_id="topic-1",
     )
@@ -510,6 +515,46 @@ async def test_query_planner_prompt_exposes_the_fixed_metric_catalog(migrated_ur
 
 
 @pytest.mark.asyncio
+async def test_prompts_carry_project_knowledge_as_background(
+    migrated_url: str, tmp_path: Path
+) -> None:
+    """Operator knowledge must reach the prompts, labelled as context rather than evidence."""
+    knowledge = tmp_path / "knowledge.yaml"
+    knowledge.write_text(
+        "project_overview: 订单平台共用一套 MySQL 订单库。\n"
+        "services:\n"
+        "  order-service:\n"
+        "    description: 负责订单创建与查询，连接池上限 20。\n",
+        encoding="utf-8",
+    )
+    harness = await _harness(migrated_url, _script(), knowledge=knowledge)
+
+    await harness.service.run(harness.context)
+
+    marked = [
+        prompt
+        for prompt in harness.script.calls
+        if "执行计划器" in prompt or "假设调整器" in prompt or "评估器" in prompt
+    ]
+    assert marked
+    for prompt in marked:
+        assert "项目背景（用于理解服务职责与术语，不构成证据）" in prompt
+        assert "订单平台共用一套 MySQL 订单库。" in prompt
+        assert "负责订单创建与查询，连接池上限 20。" in prompt
+
+
+@pytest.mark.asyncio
+async def test_prompts_stay_free_of_the_knowledge_block_without_knowledge(
+    migrated_url: str,
+) -> None:
+    harness = await _harness(migrated_url, _script())
+
+    await harness.service.run(harness.context)
+
+    assert all("项目背景" not in prompt for prompt in harness.script.calls)
+
+
+@pytest.mark.asyncio
 async def test_hypothesis_prompts_carry_the_tool_records(migrated_url: str) -> None:
     """A summary alone cannot be the only evidence: the model must read the records."""
     harness = await _harness(migrated_url, _script())
@@ -538,6 +583,21 @@ async def test_assessment_prompt_states_the_stop_reason_contract(migrated_url: s
     prompt = assess_prompts[0]
     assert "root_cause_confirmed、budget_exhausted、critical_data_unavailable 或 null" in prompt
     assert "调查继续（next_step.action 不是 finalize）时必须为 null" in prompt
+
+
+@pytest.mark.asyncio
+async def test_assessment_prompt_states_the_hypothesis_status_contract(migrated_url: str) -> None:
+    """An unlisted status enum makes the model invent values and fails the whole node."""
+    harness = await _harness(migrated_url, _script())
+
+    await harness.service.run(harness.context)
+
+    assess_prompts = [prompt for prompt in harness.script.calls if "评估器" in prompt]
+    assert assess_prompts
+    assert (
+        "hypothesis_status 只能取 pending、investigating、supported、contradicted、"
+        "blocked、unresolved。" in assess_prompts[0]
+    )
 
 
 @pytest.mark.asyncio

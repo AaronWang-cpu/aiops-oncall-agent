@@ -36,7 +36,9 @@ from super_ai.aiops.diagnosis_context import (
     DiagnosisContentError,
     DiagnosisContext,
     MockScenario,
+    ScenarioAlert,
     prepare_diagnosis_context,
+    restore_diagnosis_context,
     timestamp_ms,
 )
 from super_ai.aiops.diagnosis_models import (
@@ -575,31 +577,36 @@ class _Run:
     def _next_action(self) -> str:
         return str(self.state.working.get("next_action") or "build_queries")
 
-    def _scenario(self) -> MockScenario | None:
+    def _content(self) -> DiagnosisContext | None:
         """Prefer the prepared snapshot; fall back to the persisted context."""
         if self._context_snapshot is not None:
-            return self._context_snapshot.scenario
-        raw = _dict(_dict(self._runtime_state.get("context")).get("scenario"))
-        return MockScenario.model_validate(raw) if raw else None
+            return self._context_snapshot
+        raw = _dict(self._runtime_state.get("context"))
+        return restore_diagnosis_context(cast("dict[str, JsonValue]", raw)) if raw else None
+
+    def _scenario(self) -> MockScenario | None:
+        content = self._content()
+        return None if content is None else content.scenario
 
     def _alert(self) -> _AlertContext:
         scenario = self._scenario()
         alert = _dict(_dict(self.state.checkpoint.get("input")).get("alert"))
         primary = _alert_context(alert)
-        if primary.service and (primary.starts_at_ms is not None or scenario is None):
+        fallback = _scenario_alert(scenario, primary.service)
+        if primary.service and (primary.starts_at_ms is not None or fallback is None):
             return _AlertContext(
                 service=primary.service,
-                instance=primary.instance or (scenario.alert.instance if scenario else ""),
+                instance=primary.instance or (fallback.instance if fallback else ""),
                 starts_at_ms=primary.starts_at_ms
-                or (timestamp_ms(scenario.alert.starts_at) if scenario else None),
-                summary=primary.summary or (scenario.alert.summary if scenario else ""),
+                or (timestamp_ms(fallback.starts_at) if fallback else None),
+                summary=primary.summary or (fallback.summary if fallback else ""),
             )
-        if scenario is not None:
+        if fallback is not None:
             return _AlertContext(
-                service=scenario.alert.service,
-                instance=scenario.alert.instance,
-                starts_at_ms=timestamp_ms(scenario.alert.starts_at),
-                summary=scenario.alert.summary,
+                service=fallback.service,
+                instance=fallback.instance,
+                starts_at_ms=timestamp_ms(fallback.starts_at),
+                summary=fallback.summary,
             )
         return primary
 
@@ -1613,6 +1620,27 @@ class _Run:
 
     # ---------- prompts and parsing ----------
 
+    def _background_hint(self) -> str:
+        """Operator knowledge explains terms; it is never a substitute for evidence."""
+        content = self._content()
+        if content is None:
+            return ""
+        alert = self._alert()
+        lines: list[str] = []
+        overview = content.knowledge.project_overview.strip()
+        if overview:
+            lines.append(f"项目概述：{overview}")
+        relevant = [alert.service, *content.dependencies.get(alert.service, [])]
+        for service in relevant:
+            entry = content.knowledge.services.get(service)
+            description = entry.description.strip() if entry is not None else ""
+            if description:
+                lines.append(f"{service}：{description}")
+        if not lines:
+            return ""
+        body = "\n".join(f"- {line}" for line in lines)
+        return f"项目背景（用于理解服务职责与术语，不构成证据）：\n{body}\n"
+
     def _tool_schema_hint(self) -> str:
         names = sorted(str(item) for item in _list(self._runtime_state.get("tool_names")))
         alert = self._alert()
@@ -1682,6 +1710,7 @@ class _Run:
             "unmet_requests 每项字段：hypothesis_ids、requirement、reason。\n"
             f"最多 {max_calls} 个 calls；calls 与 unmet_requests 不能同时为空。\n"
             f"{self._tool_schema_hint()}\n"
+            f"{self._background_hint()}"
             f"当前假设与缺口：\n{assessment_digest}\n"
             f"尚未满足的信息需求：\n{unmet_text}\n"
             f"已有现场查询与证据：\n{self._evidence_digest()}\n"
@@ -1701,6 +1730,7 @@ class _Run:
             "revised 表示细化同一解释（保留 ID）；更换或新增不同原因必须放入 "
             "new_hypotheses。\n"
             "不得写入未在证据中出现的事实，也不得重复已有解释。\n"
+            f"{self._background_hint()}"
             f"当前假设：\n{listed}\n"
             f"已有现场查询与证据：\n{self._evidence_digest()}\n"
             "若现有数据不足以形成有依据的解释，两个数组都可以为空。"
@@ -1724,7 +1754,9 @@ class _Run:
             "你是 AIOps 调查的评估器。只输出 JSON，字段为 hypothesis_assessments、"
             "hypothesis_relations、incident_conclusion、next_step。\n"
             "hypothesis_assessments 必须覆盖全部当前假设且各一次，字段为 hypothesis_id、"
-            "hypothesis_status、assessment、evidence_links、gaps；\n"
+            "hypothesis_status、assessment、evidence_links、gaps；"
+            "hypothesis_status 只能取 pending、investigating、supported、contradicted、"
+            "blocked、unresolved。\n"
             "evidence_links 每项为 evidence_id、relation（supports/contradicts/context）、"
             "explanation；gaps 每项为 question、why_it_matters。\n"
             "hypothesis_relations 每项为 from_hypothesis_id、to_hypothesis_id、relation_type"
@@ -1738,8 +1770,14 @@ class _Run:
             "critical_data_unavailable 说明停止原因。\n"
             "next_step 为 action、reason、requests（每项 hypothesis_ids 与 requirement）。\n"
             f"{phase_note}\n"
-            "确认根因必须同时具备具体原因、对象/时间/机制证据、无关键反证或主要未决竞争解释；"
+            "确认根因必须同时具备具体原因、对象/时间/机制证据、无关键反证；"
             "工具成功、单个 supported 或数值评分都不能作为确认依据。\n"
+            "判定竞争解释只看已有证据：只有被现有证据正向支持的其它解释才算主要未决竞争解释；"
+            "仅因工具无法观测而无法排除的内部实现（数据库内核、网络链路、第三方服务内部）"
+            "不构成竞争解释，必须写入 gaps 而不是阻止确认。\n"
+            "当一个解释已有机制证据支持、其它解释都没有任何正向证据时，必须给出 confirmed 与"
+            "具体 root_cause，不得继续停在 unconfirmed。\n"
+            f"{self._background_hint()}"
             f"当前假设：\n{hypotheses}\n"
             f"已有现场查询与证据：\n{self._evidence_digest()}\n"
             f"本轮可用证据 ID：{json.dumps(self._evidence_ids(), ensure_ascii=False)}"
@@ -1928,6 +1966,16 @@ def _alert_context(alert: JsonDict) -> _AlertContext:
         starts_at_ms=starts_at_ms,
         summary=str(alert.get("summary") or "").strip(),
     )
+
+
+def _scenario_alert(scenario: MockScenario | None, service: str) -> ScenarioAlert | None:
+    """Prefer the requested service's alert; a service-less request takes the first one."""
+    if scenario is None:
+        return None
+    for alert in scenario.alerts:
+        if service and alert.service == service:
+            return alert
+    return scenario.alerts[0]
 
 
 def _log_window(starts_at_ms: int) -> tuple[int, int]:
