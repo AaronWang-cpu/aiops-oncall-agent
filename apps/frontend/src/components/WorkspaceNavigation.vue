@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { Activity, BookOpen, Cable, MessageSquare } from "lucide-vue-next";
+import { Activity, Cable } from "lucide-vue-next";
 
 defineProps<{ readonly activePath: string }>();
 
 const entries = [
-  { icon: MessageSquare, label: "对话", to: "/chat" },
-  { icon: BookOpen, label: "知识库", to: "/knowledge" },
   { icon: Activity, label: "智能诊断", to: "/aiops" },
   { icon: Cable, label: "MCP 连接", to: "/mcp" }
 ] as const;
@@ -13,18 +11,17 @@ const entries = [
 
 <template>
   <nav class="workspace-navigation" aria-label="工作区导航">
-    <template v-for="entry in entries" :key="entry.to">
-      <RouterLink
-        :to="entry.to"
-        class="workspace-navigation__link"
-        :class="{ 'workspace-navigation__link--active': activePath === entry.to }"
-        :aria-current="activePath === entry.to ? 'page' : undefined"
-      >
-        <component :is="entry.icon" :size="18" stroke-width="1.8" aria-hidden="true" />
-        <span>{{ entry.label }}</span>
-      </RouterLink>
-      <slot v-if="entry.to === '/chat' && activePath === '/chat'" name="chat-history" />
-    </template>
+    <RouterLink
+      v-for="entry in entries"
+      :key="entry.to"
+      :to="entry.to"
+      class="workspace-navigation__link"
+      :class="{ 'workspace-navigation__link--active': activePath === entry.to }"
+      :aria-current="activePath === entry.to ? 'page' : undefined"
+    >
+      <component :is="entry.icon" :size="18" stroke-width="1.8" aria-hidden="true" />
+      <span>{{ entry.label }}</span>
+    </RouterLink>
   </nav>
 </template>
 

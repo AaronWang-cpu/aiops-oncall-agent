@@ -19,7 +19,7 @@ const alternateLabel = computed(() => (isLogin.value ? "还没有账号？创建
 
 function intendedPath(): string {
   const redirect = route.query.redirect;
-  return typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/chat";
+  return typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/aiops";
 }
 
 async function submit(): Promise<void> {

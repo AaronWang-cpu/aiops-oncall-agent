@@ -268,8 +268,7 @@ describe("AIOps components", () => {
     expect(wrapper.text()).not.toContain(longSummary);
     await wrapper.get(".aiops-case-library__case").trigger("click");
     expect(wrapper.emitted("select")).toEqual([["diagnostic_1"]]);
-    await wrapper.get('button[title="打开生成的知识文档"]').trigger("click");
-    expect(wrapper.emitted("open-document")).toEqual([["doc_1"]]);
+    expect(wrapper.emitted("open-document")).toBeUndefined();
   });
 });
 

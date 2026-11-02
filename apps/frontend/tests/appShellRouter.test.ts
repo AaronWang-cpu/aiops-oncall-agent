@@ -11,11 +11,11 @@ describe("application shell router", () => {
       isAuthenticated: () => false
     });
 
-    await router.push("/knowledge");
+    await router.push("/aiops");
     await router.isReady();
 
     expect(router.currentRoute.value.path).toBe("/login");
-    expect(router.currentRoute.value.query.redirect).toBe("/knowledge");
+    expect(router.currentRoute.value.query.redirect).toBe("/aiops");
   });
 
   it("redirects authenticated visitors away from public auth routes", async () => {
@@ -27,7 +27,19 @@ describe("application shell router", () => {
     await router.push("/register");
     await router.isReady();
 
-    expect(router.currentRoute.value.path).toBe("/chat");
+    expect(router.currentRoute.value.path).toBe("/aiops");
+  });
+
+  it("sends unknown paths to the diagnosis workspace", async () => {
+    const router = createAppRouter({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      isAuthenticated: () => true
+    });
+
+    await router.push("/retired-section");
+    await router.isReady();
+
+    expect(router.currentRoute.value.path).toBe("/aiops");
   });
 
   it("holds dismissible normalized feedback in application state", () => {

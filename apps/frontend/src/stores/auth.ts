@@ -9,10 +9,8 @@ import {
   createAuthClient,
   type AuthClient
 } from "../authClient";
-import { useChatStore } from "./chat";
 import { useAiopsStore } from "./aiops";
 import { useFeedbackStore } from "./feedback";
-import { useKnowledgeStore } from "./knowledge";
 import { toUserFacingError } from "../ui/userFacingError";
 
 export const useAuthStore = defineStore("auth", () => {
@@ -72,8 +70,6 @@ export const useAuthStore = defineStore("auth", () => {
       }).catch(() => {
         storage().removeItem(AUTH_TOKEN_STORAGE_KEY);
         user.value = null;
-        useChatStore().reset();
-        useKnowledgeStore().reset();
         useAiopsStore().reset();
       });
       isInitialized.value = true;
@@ -89,8 +85,6 @@ export const useAuthStore = defineStore("auth", () => {
         } finally {
           storage().removeItem(AUTH_TOKEN_STORAGE_KEY);
           user.value = null;
-          useChatStore().reset();
-          useKnowledgeStore().reset();
           useAiopsStore().reset();
         }
       }),

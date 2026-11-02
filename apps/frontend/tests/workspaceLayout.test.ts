@@ -7,12 +7,8 @@ const workspaceSource = readFileSync(
   fileURLToPath(new URL("../src/layouts/WorkspaceLayout.vue", import.meta.url)),
   "utf8"
 );
-const chatSource = readFileSync(
-  fileURLToPath(new URL("../src/views/ChatView.vue", import.meta.url)),
-  "utf8"
-);
-const knowledgeSource = readFileSync(
-  fileURLToPath(new URL("../src/views/KnowledgeView.vue", import.meta.url)),
+const aiopsSource = readFileSync(
+  fileURLToPath(new URL("../src/views/AiopsView.vue", import.meta.url)),
   "utf8"
 );
 
@@ -27,11 +23,20 @@ describe("edge-to-edge desktop workspace", () => {
     expect(workspaceSource).not.toMatch(/\.workspace-layout__content\s*\{[^}]*max-width:/s);
   });
 
-  it("lets chat and knowledge own the full routed surface", () => {
-    expect(chatSource).toMatch(/\.chat-view\s*\{[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s);
-    expect(chatSource).not.toMatch(/\.chat-view\s*\{[^}]*border-radius:/s);
-    expect(knowledgeSource).toMatch(
-      /\.knowledge-view\s*\{[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s
+  it("lets the diagnosis workspace own the full routed surface", () => {
+    expect(aiopsSource).toMatch(/\.aiops-view\s*\{[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s);
+    expect(aiopsSource).not.toMatch(/\.aiops-view\s*\{[^}]*border-radius:/s);
+  });
+
+  it("keeps only the diagnosis and connection sections in the rail navigation", () => {
+    const navigationSource = readFileSync(
+      fileURLToPath(new URL("../src/components/WorkspaceNavigation.vue", import.meta.url)),
+      "utf8"
     );
+
+    expect(navigationSource).toContain('label: "智能诊断", to: "/aiops"');
+    expect(navigationSource).toContain('label: "MCP 连接", to: "/mcp"');
+    expect(navigationSource).not.toContain('"/chat"');
+    expect(navigationSource).not.toContain('"/knowledge"');
   });
 });

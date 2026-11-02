@@ -9,10 +9,7 @@ import WorkspaceLayout from "../layouts/WorkspaceLayout.vue";
 import AuthView from "../views/AuthView.vue";
 import AiopsView from "../views/AiopsView.vue";
 import AiopsReportView from "../views/AiopsReportView.vue";
-import ChatView from "../views/ChatView.vue";
-import KnowledgeView from "../views/KnowledgeView.vue";
 import McpView from "../views/McpView.vue";
-import WorkspacePlaceholderView from "../views/WorkspacePlaceholderView.vue";
 
 export interface AuthRouteAccess {
   initialize(): Promise<void>;
@@ -23,7 +20,7 @@ export function createAppRouter(auth: AuthRouteAccess): Router {
   const router = createRouter({
     history: typeof window === "undefined" ? createMemoryHistory() : createWebHistory(),
     routes: [
-      { path: "/", redirect: "/chat" },
+      { path: "/", redirect: "/aiops" },
       {
         path: "/login",
         name: "login",
@@ -44,18 +41,6 @@ export function createAppRouter(auth: AuthRouteAccess): Router {
         meta: { requiresAuth: true },
         children: [
           {
-            path: "chat",
-            name: "chat",
-            component: ChatView,
-            meta: { title: "对话" }
-          },
-          {
-            path: "knowledge",
-            name: "knowledge",
-            component: KnowledgeView,
-            meta: { title: "知识库" }
-          },
-          {
             path: "aiops",
             name: "aiops",
             component: AiopsView,
@@ -75,7 +60,7 @@ export function createAppRouter(auth: AuthRouteAccess): Router {
           }
         ]
       },
-      { path: "/:pathMatch(.*)*", redirect: "/chat" }
+      { path: "/:pathMatch(.*)*", redirect: "/aiops" }
     ]
   });
 
@@ -89,7 +74,7 @@ export function createAppRouter(auth: AuthRouteAccess): Router {
       return { path: "/login", query: { redirect: to.fullPath } };
     }
     if (publicOnly && auth.isAuthenticated()) {
-      return { path: "/chat" };
+      return { path: "/aiops" };
     }
     return true;
   });

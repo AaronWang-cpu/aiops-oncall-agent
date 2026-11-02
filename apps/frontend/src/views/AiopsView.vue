@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from "vue";
-import { useRouter } from "vue-router";
 
 import ActiveAlertList from "../components/ActiveAlertList.vue";
 import AiopsCaseLibrary from "../components/AiopsCaseLibrary.vue";
@@ -22,7 +21,6 @@ interface ReportDisplay {
 }
 
 const aiops = useAiopsStore();
-const router = useRouter();
 
 const isEffectivelyRunning = computed(
   () => aiops.isRunning || aiops.activeTask?.status === "running"
@@ -85,10 +83,6 @@ function startDiagnostic(query: string, alert: Record<string, unknown> | undefin
 function diagnoseAlert(alert: Parameters<typeof aiops.diagnoseAlert>[0]): void {
   run(() => aiops.diagnoseAlert(alert));
 }
-
-function openCaseDocument(documentId: string): void {
-  void router.push({ name: "knowledge", query: { documentId } });
-}
 </script>
 
 <template>
@@ -150,11 +144,7 @@ function openCaseDocument(documentId: string): void {
 
       <aside class="aiops-view__right" aria-label="证据链与案例">
         <AiopsEvidenceChain :chain="aiops.evidenceChain" :diagnosis="aiops.activeDiagnosis" />
-        <AiopsCaseLibrary
-          :cases="aiops.diagnosticCases"
-          @open-document="openCaseDocument"
-          @select="selectDiagnostic"
-        />
+        <AiopsCaseLibrary :cases="aiops.diagnosticCases" @select="selectDiagnostic" />
       </aside>
     </div>
   </section>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { BookOpenCheck, ChevronDown, FolderOpen } from "lucide-vue-next";
+import { BookOpenCheck, ChevronDown } from "lucide-vue-next";
 import { ref } from "vue";
 
 import type { AiopsDiagnosticCase } from "@agent-py/api-contracts";
 
-defineEmits<{ select: [taskId: string]; "open-document": [documentId: string] }>();
+defineEmits<{ select: [taskId: string] }>();
 defineProps<{ readonly cases: readonly AiopsDiagnosticCase[] }>();
 
 const collapsed = ref(true);
@@ -33,7 +33,7 @@ function caseSummary(summary: string): string {
     </button>
     <div v-show="!collapsed" class="aiops-case-library__body">
       <p v-if="cases.length === 0">已完成的诊断会自动保存到这里。</p>
-      <ul v-else><li v-for="item in cases" :key="item.id"><button class="aiops-case-library__case" type="button" @click="$emit('select', item.taskId)"><strong>{{ item.alertName || item.service || '诊断案例' }}</strong><small>{{ item.service || '未提供服务名称' }} · {{ item.keywords.join(', ') || '未提取关键词' }}</small><span>{{ caseSummary(item.summary) }}</span></button><button class="aiops-case-library__document" type="button" title="打开生成的知识文档" :aria-label="`打开 ${item.alertName || item.service || '诊断案例'} 生成的知识文档`" @click="$emit('open-document', item.documentId)"><FolderOpen :size="16" aria-hidden="true" /></button></li></ul>
+      <ul v-else><li v-for="item in cases" :key="item.id"><button class="aiops-case-library__case" type="button" @click="$emit('select', item.taskId)"><strong>{{ item.alertName || item.service || '诊断案例' }}</strong><small>{{ item.service || '未提供服务名称' }} · {{ item.keywords.join(', ') || '未提取关键词' }}</small><span>{{ caseSummary(item.summary) }}</span></button></li></ul>
     </div>
   </section>
 </template>
@@ -50,11 +50,9 @@ h3 { font-size: 0.9rem; font-weight: 680; margin: 0; text-align: left; }
 .aiops-case-library__body { padding: 0.5rem 1.2rem 1.2rem; }
 .aiops-case-library__body > p { color: var(--text-tertiary); font-size: 0.8rem; margin: 0.5rem 0 0; }
 ul { display: grid; gap: 0.35rem; list-style: none; margin: 0.5rem 0 0; padding: 0; }
-li { align-items: center; display: grid; gap: 0.45rem; grid-template-columns: minmax(0, 1fr) 2rem; }
+li { align-items: center; display: grid; gap: 0.45rem; grid-template-columns: minmax(0, 1fr); }
 .aiops-case-library__case { display: grid; gap: 0.2rem; min-width: 0; padding: 0.55rem 0; text-align: left; width: 100%; }
 .aiops-case-library__case:hover strong { color: var(--accent-strong); text-decoration: underline; }
-.aiops-case-library__document { align-items: center; border: 1px solid transparent; color: var(--text-secondary); display: inline-flex; height: 2rem; justify-content: center; width: 2rem; }
-.aiops-case-library__document:hover { background: var(--surface-hover); border-color: var(--line); color: var(--accent-strong); }
 strong { font-size: 0.8rem; font-weight: 680; }
 small, span { color: var(--text-tertiary); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 span { color: var(--text-secondary); }
