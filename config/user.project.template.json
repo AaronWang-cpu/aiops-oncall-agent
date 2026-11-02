@@ -6,11 +6,13 @@
   },
   "llm": {
     "apiKey": "",
-    "chatModel": "qwen3.7-max",
+    "chatModel": "deepseek-flash",
     "embeddingModel": "text-embedding-v4",
+    "embeddingApiKey": "",
+    "rerankApiKey": "",
     "modelCapabilities": {
-      "qwen3.7-max": {
-        "contextWindowTokens": 1000000
+      "deepseek-flash": {
+        "contextWindowTokens": 1048576
       }
     }
   },

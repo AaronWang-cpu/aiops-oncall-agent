@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from super_ai.project_config import (
     ProjectConfigurationError,
@@ -30,8 +30,11 @@ class LlmProviderConfig:
     chat_model: str
     embedding_model: str
     embedding_dimensions: int
+    embedding_base_url: str
+    embedding_api_key: str = field(repr=False)
     rerank_model: str
     rerank_url: str
+    rerank_api_key: str = field(repr=False)
     context_window_tokens: int
     temperature: float
     timeout_seconds: float
@@ -45,6 +48,10 @@ def load_llm_provider_config(
     try:
         raw_config = project_config_section("llm", config_path=config_path)
         api_key = required_str(raw_config, "apiKey")
+        base_url = required_str(raw_config, "baseUrl")
+        embedding_base_url = _optional_str(raw_config, "embeddingBaseUrl", default=base_url)
+        embedding_api_key = _optional_str(raw_config, "embeddingApiKey", default=api_key)
+        rerank_api_key = _optional_str(raw_config, "rerankApiKey", default=embedding_api_key)
 
         chat_model = required_str(raw_config, "chatModel")
         model_capabilities = raw_config.get("modelCapabilities")
@@ -69,8 +76,11 @@ def load_llm_provider_config(
             chat_model=chat_model,
             embedding_model=required_str(raw_config, "embeddingModel"),
             embedding_dimensions=required_int(raw_config, "embeddingDimensions"),
+            embedding_base_url=embedding_base_url,
+            embedding_api_key=embedding_api_key,
             rerank_model=required_str(raw_config, "rerankModel"),
             rerank_url=required_str(raw_config, "rerankUrl"),
+            rerank_api_key=rerank_api_key,
             context_window_tokens=required_int(model_profile, "contextWindowTokens"),
             temperature=required_float(raw_config, "temperature"),
             timeout_seconds=required_float(raw_config, "timeoutSeconds"),
@@ -78,3 +88,13 @@ def load_llm_provider_config(
         )
     except ProjectConfigurationError as exc:
         raise LlmConfigurationError(str(exc)) from exc
+
+
+def _optional_str(raw_config: Mapping[str, Any], key: str, *, default: str) -> str:
+    """An unset or blank auxiliary endpoint reuses the chat value it falls back to."""
+    value = raw_config.get(key)
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        raise ProjectConfigurationError(f"Project config field must be a string: {key}")
+    return value.strip() or default

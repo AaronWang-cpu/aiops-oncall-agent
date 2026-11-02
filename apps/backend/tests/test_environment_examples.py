@@ -10,6 +10,7 @@ def test_local_project_configs_are_ignored_and_templates_are_sanitized() -> None
     ignore_patterns = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
     assert "config/project.json" in ignore_patterns
     assert "config/user.project.json" in ignore_patterns
+    assert "config/demo.project.json" in ignore_patterns
 
     base_template = json.loads(
         (REPO_ROOT / "config/project.template.json").read_text(encoding="utf-8")
@@ -19,6 +20,8 @@ def test_local_project_configs_are_ignored_and_templates_are_sanitized() -> None
     )
 
     assert base_template["llm"]["apiKey"] == ""
+    assert base_template["llm"]["embeddingApiKey"] == ""
+    assert base_template["llm"]["rerankApiKey"] == ""
     assert base_template["clsMcpServer"]["secretId"] == ""
     assert base_template["clsMcpServer"]["secretKey"] == ""
     assert base_template["prometheusAlerts"]["sources"][0]["password"] == ""
@@ -26,6 +29,8 @@ def test_local_project_configs_are_ignored_and_templates_are_sanitized() -> None
     assert base_template["minio"]["accessKey"] == ""
     assert base_template["minio"]["secretKey"] == ""
     assert user_template["llm"]["apiKey"] == ""
+    assert user_template["llm"]["embeddingApiKey"] == ""
+    assert user_template["llm"]["rerankApiKey"] == ""
     assert user_template["clsMcpServer"]["secretId"] == ""
     assert user_template["clsMcpServer"]["secretKey"] == ""
 
@@ -46,14 +51,19 @@ def test_project_config_contains_development_provider_config() -> None:
     assert base_config["clsLogUpload"]["topicId"] == ""
     assert user_config["llm"]["apiKey"].startswith("sk-")
     assert llm["apiKey"].startswith("sk-")
-    assert llm["baseUrl"] == "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    assert llm["chatModel"] == "qwen3.7-max"
+    assert llm["provider"] == "deepseek-openai"
+    assert llm["baseUrl"] == "https://api.deepseek.com/v1"
+    assert llm["chatModel"] == "deepseek-flash"
     assert llm["embeddingModel"] == "text-embedding-v4"
     assert llm["embeddingDimensions"] == 1024
+    assert llm["embeddingBaseUrl"] == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    assert llm["embeddingApiKey"].startswith("sk-")
+    assert llm["embeddingApiKey"] != llm["apiKey"]
     assert llm["rerankModel"] == "qwen3-vl-rerank"
+    assert llm["rerankApiKey"] == llm["embeddingApiKey"]
     assert "modelCapabilities" not in base_config["llm"]
     capabilities = user_config["llm"]["modelCapabilities"]
-    assert capabilities["qwen3.7-max"]["contextWindowTokens"] == 1_000_000
+    assert capabilities["deepseek-flash"]["contextWindowTokens"] == 1_048_576
     assert llm["maxRetries"] == 2
 
 

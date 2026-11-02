@@ -9,7 +9,7 @@ import pytest
 from super_ai.llm import (
     EmbeddingModel,
     LlmConfigurationError,
-    QwenOpenAIProvider,
+    OpenAICompatibleProvider,
     load_llm_provider_config,
 )
 
@@ -45,21 +45,31 @@ class FakeAsyncEmbeddingClient:
         return {"data": [{"embedding": [float(text.removeprefix("text-"))]} for text in input]}
 
 
-def test_loads_tracked_qwen_defaults() -> None:
+def test_loads_tracked_deepseek_chat_defaults() -> None:
     config = load_llm_provider_config()
 
-    assert config.provider == "qwen-openai"
+    assert config.provider == "deepseek-openai"
     assert config.api_key.startswith("sk-")
-    assert config.base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    assert config.chat_model == "qwen3.7-max"
+    assert config.base_url == "https://api.deepseek.com/v1"
+    assert config.chat_model == "deepseek-flash"
     assert config.embedding_model == "text-embedding-v4"
     assert config.embedding_dimensions == 1024
     assert config.rerank_model == "qwen3-vl-rerank"
     assert config.rerank_url.endswith("/text-rerank/text-rerank")
-    assert config.context_window_tokens == 1_000_000
+    assert config.context_window_tokens == 1_048_576
     assert config.temperature == 0.2
     assert config.timeout_seconds == 120.0
     assert config.max_retries == 2
+
+
+def test_tracked_defaults_keep_embedding_and_rerank_on_their_own_endpoint() -> None:
+    config = load_llm_provider_config()
+
+    assert config.embedding_base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    assert config.embedding_base_url != config.base_url
+    assert config.embedding_api_key.startswith("sk-")
+    assert config.embedding_api_key != config.api_key
+    assert config.rerank_api_key == config.embedding_api_key
 
 
 def test_loads_explicit_project_config_file(tmp_path: Path) -> None:
@@ -116,7 +126,63 @@ def test_merges_user_project_config_file(tmp_path: Path) -> None:
     assert config.chat_model == "merged-chat"
     assert config.embedding_model == "merged-embedding"
     assert config.context_window_tokens == 262144
-    assert config.base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    assert config.base_url == "https://api.deepseek.com/v1"
+
+
+def test_auxiliary_endpoints_reuse_the_chat_configuration_when_unset(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path, api_key="chat-secret")
+
+    config = load_llm_provider_config(config_path=config_path)
+
+    assert config.embedding_base_url == config.base_url
+    assert config.embedding_api_key == "chat-secret"
+    assert config.rerank_api_key == "chat-secret"
+
+
+def test_auxiliary_endpoints_can_point_at_another_provider(tmp_path: Path) -> None:
+    config_path = _write_config(
+        tmp_path,
+        api_key="chat-secret",
+        embedding_base_url="https://embeddings.example.test/v1",
+        embedding_api_key="embedding-secret",
+        rerank_api_key="rerank-secret",
+    )
+
+    config = load_llm_provider_config(config_path=config_path)
+
+    assert config.base_url == "https://api.deepseek.com/v1"
+    assert config.embedding_base_url == "https://embeddings.example.test/v1"
+    assert config.embedding_api_key == "embedding-secret"
+    assert config.rerank_api_key == "rerank-secret"
+    assert "chat-secret" not in repr(config)
+    assert "embedding-secret" not in repr(config)
+    assert "rerank-secret" not in repr(config)
+
+
+def test_blank_auxiliary_credentials_reuse_the_chat_configuration(tmp_path: Path) -> None:
+    config_path = _write_config(
+        tmp_path,
+        api_key="chat-secret",
+        embedding_base_url="",
+        embedding_api_key="",
+        rerank_api_key="",
+    )
+
+    config = load_llm_provider_config(config_path=config_path)
+
+    assert config.embedding_base_url == config.base_url
+    assert config.embedding_api_key == "chat-secret"
+    assert config.rerank_api_key == "chat-secret"
+
+
+def test_non_string_auxiliary_endpoint_is_rejected(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path, api_key="chat-secret")
+    raw_config = json.loads(config_path.read_text(encoding="utf-8"))
+    raw_config["llm"]["embeddingApiKey"] = 123
+    config_path.write_text(json.dumps(raw_config), encoding="utf-8")
+
+    with pytest.raises(LlmConfigurationError, match="embeddingApiKey"):
+        load_llm_provider_config(config_path=config_path)
 
 
 def test_missing_api_key_fails_safely(
@@ -150,7 +216,7 @@ def test_provider_constructs_model_with_config() -> None:
         captured["config"] = factory_config
         return FakeChatModel()
 
-    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+    provider = OpenAICompatibleProvider(config=config, model_factory=fake_factory)
 
     model = provider.create_chat_model()
 
@@ -166,7 +232,7 @@ def test_provider_constructs_embedding_model_with_config() -> None:
         captured["config"] = factory_config
         return FakeEmbeddingModel()
 
-    provider = QwenOpenAIProvider(
+    provider = OpenAICompatibleProvider(
         config=config,
         model_factory=lambda _: FakeChatModel(),
         embedding_factory=fake_embedding_factory,
@@ -179,9 +245,9 @@ def test_provider_constructs_embedding_model_with_config() -> None:
 
 
 @pytest.mark.asyncio
-async def test_default_embedding_model_preserves_raw_qwen_inputs_and_batches_by_ten() -> None:
+async def test_default_embedding_model_preserves_raw_text_inputs_and_batches_by_ten() -> None:
     config = load_llm_provider_config()
-    provider = QwenOpenAIProvider(config=config, model_factory=lambda _: FakeChatModel())
+    provider = OpenAICompatibleProvider(config=config, model_factory=lambda _: FakeChatModel())
 
     model = provider.create_embedding_model()
     embedding_model = cast(Any, model)
@@ -193,6 +259,7 @@ async def test_default_embedding_model_preserves_raw_qwen_inputs_and_batches_by_
 
     assert embedding_model.check_embedding_ctx_length is False
     assert embedding_model.dimensions == config.embedding_dimensions
+    assert embedding_model.openai_api_base == config.embedding_base_url
     assert embedding_model.chunk_size == 10
     assert fake_client.inputs == [texts[:10], texts[10:]]
     assert vectors == [[float(index)] for index in range(11)]
@@ -202,14 +269,14 @@ async def test_default_embedding_model_preserves_raw_qwen_inputs_and_batches_by_
 async def test_readiness_succeeds_without_exposing_secret() -> None:
     config = load_llm_provider_config()
     fake_model = FakeChatModel(response="ready")
-    provider = QwenOpenAIProvider(config=config, model_factory=lambda _: fake_model)
+    provider = OpenAICompatibleProvider(config=config, model_factory=lambda _: fake_model)
 
     result = await provider.check_readiness()
 
     assert result.ok is True
-    assert result.provider == "qwen-openai"
-    assert result.model == "qwen3.7-max"
-    assert result.base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    assert result.provider == "deepseek-openai"
+    assert result.model == "deepseek-flash"
+    assert result.base_url == "https://api.deepseek.com/v1"
     assert result.error is None
     assert result.latency_ms >= 0
     assert config.api_key not in repr(result)
@@ -219,7 +286,7 @@ async def test_readiness_succeeds_without_exposing_secret() -> None:
 @pytest.mark.asyncio
 async def test_readiness_failure_is_safe() -> None:
     config = load_llm_provider_config()
-    provider = QwenOpenAIProvider(
+    provider = OpenAICompatibleProvider(
         config=config,
         model_factory=lambda _: FakeChatModel(error=RuntimeError("provider unavailable")),
     )
@@ -249,7 +316,7 @@ def test_diagnostic_model_disables_retries_and_clamps_timeout() -> None:
         captured["config"] = factory_config
         return FakeChatModel()
 
-    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+    provider = OpenAICompatibleProvider(config=config, model_factory=fake_factory)
 
     provider.create_diagnostic_model(timeout_seconds=45)
 
@@ -269,7 +336,7 @@ def test_diagnostic_model_never_exceeds_configured_timeout() -> None:
         captured.append(factory_config)
         return FakeChatModel()
 
-    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+    provider = OpenAICompatibleProvider(config=config, model_factory=fake_factory)
 
     provider.create_diagnostic_model(timeout_seconds=600)
 
@@ -279,7 +346,7 @@ def test_diagnostic_model_never_exceeds_configured_timeout() -> None:
 @pytest.mark.parametrize("timeout_seconds", [0, -1])
 def test_diagnostic_model_rejects_non_positive_timeout(timeout_seconds: float) -> None:
     config = load_llm_provider_config()
-    provider = QwenOpenAIProvider(config=config, model_factory=lambda _: FakeChatModel())
+    provider = OpenAICompatibleProvider(config=config, model_factory=lambda _: FakeChatModel())
 
     with pytest.raises(ValueError, match="positive"):
         provider.create_diagnostic_model(timeout_seconds=timeout_seconds)
@@ -293,7 +360,7 @@ def test_chat_model_keeps_configured_retries_after_diagnostic_use() -> None:
         captured.append(factory_config)
         return FakeChatModel()
 
-    provider = QwenOpenAIProvider(config=config, model_factory=fake_factory)
+    provider = OpenAICompatibleProvider(config=config, model_factory=fake_factory)
 
     provider.create_diagnostic_model(timeout_seconds=30)
     provider.create_chat_model()
@@ -307,39 +374,41 @@ def _write_config(
     tmp_path: Path,
     *,
     api_key: str,
-    base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    chat_model: str = "qwen3.7-max",
+    base_url: str = "https://api.deepseek.com/v1",
+    chat_model: str = "deepseek-flash",
     embedding_model: str = "text-embedding-v4",
     embedding_dimensions: int = 1024,
+    embedding_base_url: str | None = None,
+    embedding_api_key: str | None = None,
     rerank_model: str = "qwen3-vl-rerank",
     rerank_url: str = "https://example.test/rerank",
-    context_window_tokens: int = 1_000_000,
+    rerank_api_key: str | None = None,
+    context_window_tokens: int = 1_048_576,
     temperature: float = 0.2,
     timeout_seconds: int = 30,
     max_retries: int = 2,
 ) -> Path:
+    llm: dict[str, object] = {
+        "provider": "deepseek-openai",
+        "apiKey": api_key,
+        "baseUrl": base_url,
+        "chatModel": chat_model,
+        "embeddingModel": embedding_model,
+        "embeddingDimensions": embedding_dimensions,
+        "rerankModel": rerank_model,
+        "rerankUrl": rerank_url,
+        "modelCapabilities": {chat_model: {"contextWindowTokens": context_window_tokens}},
+        "temperature": temperature,
+        "timeoutSeconds": timeout_seconds,
+        "maxRetries": max_retries,
+    }
+    for key, value in {
+        "embeddingBaseUrl": embedding_base_url,
+        "embeddingApiKey": embedding_api_key,
+        "rerankApiKey": rerank_api_key,
+    }.items():
+        if value is not None:
+            llm[key] = value
     config_path = tmp_path / "project.json"
-    config_path.write_text(
-        json.dumps(
-            {
-                "llm": {
-                    "provider": "qwen-openai",
-                    "apiKey": api_key,
-                    "baseUrl": base_url,
-                    "chatModel": chat_model,
-                    "embeddingModel": embedding_model,
-                    "embeddingDimensions": embedding_dimensions,
-                    "rerankModel": rerank_model,
-                    "rerankUrl": rerank_url,
-                    "modelCapabilities": {
-                        chat_model: {"contextWindowTokens": context_window_tokens}
-                    },
-                    "temperature": temperature,
-                    "timeoutSeconds": timeout_seconds,
-                    "maxRetries": max_retries,
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
+    config_path.write_text(json.dumps({"llm": llm}), encoding="utf-8")
     return config_path

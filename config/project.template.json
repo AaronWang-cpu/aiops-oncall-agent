@@ -30,14 +30,17 @@
     "modelTimeoutSeconds": 60
   },
   "llm": {
-    "provider": "qwen-openai",
+    "provider": "deepseek-openai",
     "apiKey": "",
-    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "baseUrl": "https://api.deepseek.com/v1",
     "chatModel": "",
     "embeddingModel": "",
     "embeddingDimensions": 1024,
+    "embeddingBaseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "embeddingApiKey": "",
     "rerankModel": "qwen3-vl-rerank",
     "rerankUrl": "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank",
+    "rerankApiKey": "",
     "temperature": 0.2,
     "timeoutSeconds": 120,
     "maxRetries": 2

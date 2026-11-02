@@ -73,8 +73,13 @@ class LlmReadinessResult:
     error: str | None = None
 
 
-class QwenOpenAIProvider:
-    """Default Qwen provider using LangChain's OpenAI-compatible ChatOpenAI."""
+class OpenAICompatibleProvider:
+    """Default provider using LangChain's OpenAI-compatible clients.
+
+    The chat model, the embedding endpoint and the rerank endpoint are each
+    configurable; the auxiliary endpoints reuse the chat base URL and key unless
+    the configuration points them somewhere else.
+    """
 
     def __init__(
         self,
@@ -144,7 +149,7 @@ class QwenOpenAIProvider:
 
 def build_default_llm_provider(config_path: Path | str | None = None) -> LlmProvider:
     """Build the default configured LLM provider."""
-    return QwenOpenAIProvider(load_llm_provider_config(config_path=config_path))
+    return OpenAICompatibleProvider(load_llm_provider_config(config_path=config_path))
 
 
 def _create_chat_openai_model(config: LlmProviderConfig) -> ChatModel:
@@ -165,8 +170,8 @@ def _create_openai_embedding_model(config: LlmProviderConfig) -> EmbeddingModel:
     return cast(
         EmbeddingModel,
         OpenAIEmbeddings(
-            api_key=lambda: config.api_key,
-            base_url=config.base_url,
+            api_key=lambda: config.embedding_api_key,
+            base_url=config.embedding_base_url,
             model=config.embedding_model,
             dimensions=config.embedding_dimensions,
             chunk_size=QWEN_EMBEDDING_BATCH_SIZE,
@@ -179,7 +184,7 @@ def _create_openai_embedding_model(config: LlmProviderConfig) -> EmbeddingModel:
 
 def _create_qwen_rerank_model(config: LlmProviderConfig) -> RerankModel:
     return QwenVlRerankModel(
-        api_key=config.api_key,
+        api_key=config.rerank_api_key,
         endpoint=config.rerank_url,
         model=config.rerank_model,
         timeout_seconds=config.timeout_seconds,

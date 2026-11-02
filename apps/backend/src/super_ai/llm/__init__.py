@@ -10,7 +10,7 @@ from super_ai.llm.provider import (
     EmbeddingModel,
     LlmProvider,
     LlmReadinessResult,
-    QwenOpenAIProvider,
+    OpenAICompatibleProvider,
     build_default_llm_provider,
 )
 from super_ai.llm.rerank import LlmRerankError, QwenVlRerankModel, RerankModel, RerankResult
@@ -23,7 +23,7 @@ __all__ = [
     "LlmProviderConfig",
     "LlmReadinessResult",
     "LlmRerankError",
-    "QwenOpenAIProvider",
+    "OpenAICompatibleProvider",
     "QwenVlRerankModel",
     "RerankModel",
     "RerankResult",
