@@ -10,18 +10,14 @@ import type {
   AiopsDiagnosticStep,
   AiopsDiagnosticSummary,
   DiagnosisResult,
-  DiagnosisQueryRecord,
   SseEvent
 } from "@agent-py/api-contracts";
 
-import AiopsCaseLibrary from "../src/components/AiopsCaseLibrary.vue";
 import AiopsConclusionPanel from "../src/components/AiopsConclusionPanel.vue";
 import AiopsEvidenceDrawer from "../src/components/AiopsEvidenceDrawer.vue";
 import AiopsEvidencePanel from "../src/components/AiopsEvidencePanel.vue";
 import AiopsExecutionChain from "../src/components/AiopsExecutionChain.vue";
-import AiopsLedgerPanel from "../src/components/AiopsLedgerPanel.vue";
 import AiopsReportPanel from "../src/components/AiopsReportPanel.vue";
-import AiopsRunForm from "../src/components/AiopsRunForm.vue";
 import AiopsTimeline from "../src/components/AiopsTimeline.vue";
 
 beforeEach(() => {
@@ -33,16 +29,6 @@ beforeEach(() => {
 });
 
 describe("AIOps components", () => {
-  it("validates optional alert context before creating a diagnosis", async () => {
-    const wrapper = mount(AiopsRunForm, { props: { disabled: false, isRunning: false } });
-    await wrapper.get('textarea[aria-label="诊断问题"]').setValue("Inspect latency");
-    await wrapper.get('textarea[aria-label="告警上下文"]') .setValue("{not-json");
-    await wrapper.get('button[type="submit"]').trigger("submit");
-
-    expect(wrapper.text()).toContain("有效的 JSON 对象");
-    expect(wrapper.emitted("run")).toBeUndefined();
-  });
-
   it("renders the persisted execution chain and links each tool call to its evidence", async () => {
     const event: SseEvent = {
       id: "event_1",
@@ -202,31 +188,6 @@ describe("AIOps components", () => {
     expect(wrapper.get("details summary").text()).toContain("原始返回内容");
   });
 
-  it("shows budget usage and why a query failed", () => {
-    const record: DiagnosisQueryRecord = {
-      query_id: "query_1",
-      hypothesis_ids: ["H1"],
-      question: "查询订单库连接池指标",
-      tool_name: "QueryMetric",
-      arguments: { metric_names: ["order_db_connection_pool_usage"] },
-      status: "failed",
-      status_reason: "指标不在白名单内。"
-    };
-    const wrapper = mount(AiopsLedgerPanel, {
-      props: { budget: diagnosis().budget, queryRecords: [record] }
-    });
-
-    expect(wrapper.text()).toContain("查询轮次");
-    expect(wrapper.text()).toContain("1 / 5");
-    expect(wrapper.text()).toContain("工具调用");
-    expect(wrapper.text()).toContain("1 / 20");
-    expect(wrapper.text()).toContain("查询订单库连接池指标");
-    expect(wrapper.text()).toContain("QueryMetric");
-    expect(wrapper.text()).toContain("失败");
-    expect(wrapper.text()).toContain("指标不在白名单内。");
-    expect(wrapper.text()).toContain("关联 H1");
-  });
-
   it("renders a persisted Markdown report as the center reading surface", () => {
     const wrapper = mount(AiopsReportPanel, {
       props: {
@@ -327,24 +288,6 @@ describe("AIOps components", () => {
 
     expect(wrapper.text()).toContain("诊断报告");
     expect(wrapper.text()).not.toContain(marker);
-  });
-
-  it("lists a server-backed diagnosis case and selects its task", async () => {
-    const longSummary = `# 告警分析报告\n\n${"长报告内容".repeat(80)}`;
-    const wrapper = mount(AiopsCaseLibrary, {
-      props: {
-        cases: [{
-          id: "case_1", ownerUserId: "user_1", taskId: "diagnostic_1", reportId: "report_1", documentId: "doc_1", indexTaskId: "index_1", alertName: "CheckoutLatencyHigh", service: "checkout", keywords: ["checkout", "latency"], rootCause: "", remediation: "", summary: longSummary, evidenceIds: ["evidence_1"], createdAt: "2026-07-10T00:00:00Z"
-        }]
-      }
-    });
-
-    expect(wrapper.text()).toContain("CheckoutLatencyHigh");
-    expect(wrapper.text()).toContain("长报告内容");
-    expect(wrapper.text()).not.toContain(longSummary);
-    await wrapper.get(".aiops-case-library__case").trigger("click");
-    expect(wrapper.emitted("select")).toEqual([["diagnostic_1"]]);
-    expect(wrapper.emitted("open-document")).toBeUndefined();
   });
 });
 

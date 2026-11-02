@@ -3,7 +3,6 @@ import { defineStore } from "pinia";
 
 import type {
   ActiveAlert,
-  AiopsDiagnosticCase,
   AiopsDiagnosticEvidenceChain,
   AiopsDiagnosticSummary,
   CreateAiopsDiagnosticRequest,
@@ -34,7 +33,6 @@ export const useAiopsStore = defineStore("aiops", () => {
   const client = clientFactory();
   const history = shallowRef<readonly AiopsDiagnosticSummary[]>([]);
   const activeAlerts = ref<readonly ActiveAlert[]>([]);
-  const diagnosticCases = ref<readonly AiopsDiagnosticCase[]>([]);
   const alertsErrorMessage = ref<string | null>(null);
   const alertsLoading = ref(false);
   const activeDiagnosticId = ref<string | null>(null);
@@ -45,7 +43,6 @@ export const useAiopsStore = defineStore("aiops", () => {
   const isLoading = ref(false);
   const isRunning = ref(false);
   const errorMessage = ref<string | null>(null);
-  const savedCaseDocumentId = ref<string | null>(null);
 
   /**
    * The new investigation projection. Live `task.status` events take precedence while the
@@ -96,10 +93,6 @@ export const useAiopsStore = defineStore("aiops", () => {
     } finally {
       alertsLoading.value = false;
     }
-  }
-
-  async function reloadDiagnosticCases(): Promise<void> {
-    diagnosticCases.value = (await client.listDiagnosticCases()).items;
   }
 
   async function loadEvidenceChain(diagnosticId: string): Promise<void> {
@@ -162,11 +155,8 @@ export const useAiopsStore = defineStore("aiops", () => {
     }
   }
 
-  async function refreshCollections(): Promise<void> {
-    await Promise.all([
-      reloadHistory().catch((error: unknown) => reportError(error)),
-      reloadDiagnosticCases().catch((error: unknown) => reportError(error))
-    ]);
+  async function refreshHistory(): Promise<void> {
+    await reloadHistory().catch((error: unknown) => reportError(error));
   }
 
   /** Reload the persisted chain after a run, dropping a stale success if the reload fails. */
@@ -177,7 +167,7 @@ export const useAiopsStore = defineStore("aiops", () => {
       evidenceChain.value = null;
       reportError(error);
     }
-    await refreshCollections();
+    await refreshHistory();
   }
 
   async function reconcileAfterFailure(): Promise<void> {
@@ -189,13 +179,12 @@ export const useAiopsStore = defineStore("aiops", () => {
       evidenceChain.value = null;
       reportError(error);
     }
-    await refreshCollections();
+    await refreshHistory();
   }
 
   function reset(): void {
     history.value = [];
     activeAlerts.value = [];
-    diagnosticCases.value = [];
     alertsErrorMessage.value = null;
     alertsLoading.value = false;
     activeDiagnosticId.value = null;
@@ -206,7 +195,6 @@ export const useAiopsStore = defineStore("aiops", () => {
     isLoading.value = false;
     isRunning.value = false;
     errorMessage.value = null;
-    savedCaseDocumentId.value = null;
   }
 
   async function runDiagnostic(
@@ -255,7 +243,6 @@ export const useAiopsStore = defineStore("aiops", () => {
     activeAlerts,
     activeDiagnosis,
     activeTask,
-    diagnosticCases,
     alertsErrorMessage,
     alertsLoading,
     errorMessage,
@@ -265,7 +252,6 @@ export const useAiopsStore = defineStore("aiops", () => {
     isRunning,
     lastEventId,
     liveEvents,
-    savedCaseDocumentId,
     initialize: async (): Promise<void> => {
       isLoading.value = true;
       errorMessage.value = null;
@@ -278,7 +264,7 @@ export const useAiopsStore = defineStore("aiops", () => {
       } finally {
         isLoading.value = false;
       }
-      await Promise.all([reloadActiveAlerts(), reloadDiagnosticCases().catch(() => undefined)]);
+      await reloadActiveAlerts();
     },
     selectDiagnostic: async (diagnosticId: string): Promise<void> => {
       isLoading.value = true;
@@ -298,7 +284,6 @@ export const useAiopsStore = defineStore("aiops", () => {
     },
     diagnoseAlert,
     refreshActiveAlerts: reloadActiveAlerts,
-    refreshDiagnosticCases: reloadDiagnosticCases,
     runDiagnostic,
     cancelActive: async (): Promise<void> => {
       const jobId = activeTask.value?.backgroundJob?.id;
@@ -307,16 +292,6 @@ export const useAiopsStore = defineStore("aiops", () => {
         await client.cancelBackgroundJob(jobId);
         isRunning.value = false;
         await Promise.all([reloadHistory(), loadEvidenceChain(activeTask.value!.id)]);
-      } catch (error) {
-        reportError(error);
-        throw error;
-      }
-    },
-    saveActiveCase: async (): Promise<void> => {
-      if (activeDiagnosticId.value === null) return;
-      try {
-        const saved = await client.saveDiagnosticCase(activeDiagnosticId.value);
-        savedCaseDocumentId.value = saved.document.id;
       } catch (error) {
         reportError(error);
         throw error;

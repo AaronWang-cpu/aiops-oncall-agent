@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { Activity, Cable } from "lucide-vue-next";
+import { Activity } from "lucide-vue-next";
 
 defineProps<{ readonly activePath: string }>();
 
-const entries = [
-  { icon: Activity, label: "智能诊断", to: "/aiops" },
-  { icon: Cable, label: "MCP 连接", to: "/mcp" }
-] as const;
+const entries = [{ icon: Activity, label: "智能诊断", to: "/aiops" }] as const;
 </script>
 
 <template>

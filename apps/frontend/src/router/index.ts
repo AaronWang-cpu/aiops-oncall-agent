@@ -9,7 +9,6 @@ import WorkspaceLayout from "../layouts/WorkspaceLayout.vue";
 import AuthView from "../views/AuthView.vue";
 import AiopsView from "../views/AiopsView.vue";
 import AiopsReportView from "../views/AiopsReportView.vue";
-import McpView from "../views/McpView.vue";
 
 export interface AuthRouteAccess {
   initialize(): Promise<void>;
@@ -51,12 +50,6 @@ export function createAppRouter(auth: AuthRouteAccess): Router {
             name: "aiops-report",
             component: AiopsReportView,
             meta: { title: "诊断报告" }
-          },
-          {
-            path: "mcp",
-            name: "mcp",
-            component: McpView,
-            meta: { title: "MCP 连接" }
           }
         ]
       },

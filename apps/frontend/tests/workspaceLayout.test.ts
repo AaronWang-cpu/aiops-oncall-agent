@@ -28,14 +28,14 @@ describe("edge-to-edge desktop workspace", () => {
     expect(aiopsSource).not.toMatch(/\.aiops-workbench\s*\{[^}]*border-radius:/s);
   });
 
-  it("keeps only the diagnosis and connection sections in the rail navigation", () => {
+  it("keeps only the diagnosis section in the rail navigation", () => {
     const navigationSource = readFileSync(
       fileURLToPath(new URL("../src/components/WorkspaceNavigation.vue", import.meta.url)),
       "utf8"
     );
 
     expect(navigationSource).toContain('label: "智能诊断", to: "/aiops"');
-    expect(navigationSource).toContain('label: "MCP 连接", to: "/mcp"');
+    expect(navigationSource).not.toContain('"/mcp"');
     expect(navigationSource).not.toContain('"/chat"');
     expect(navigationSource).not.toContain('"/knowledge"');
   });

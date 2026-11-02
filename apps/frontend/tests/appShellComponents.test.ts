@@ -44,7 +44,7 @@ describe("application shell components", () => {
 
     expect(wrapper.attributes("aria-label")).toBe("工作区导航");
     expect(wrapper.get('[aria-current="page"]').text()).toContain("智能诊断");
-    expect(wrapper.text()).toContain("MCP 连接");
+    expect(wrapper.text()).not.toContain("MCP");
     expect(wrapper.text()).not.toContain("对话");
     expect(wrapper.text()).not.toContain("知识库");
     expect(wrapper.html()).toContain('href="/aiops"');

@@ -14,23 +14,21 @@ const evidencePanelSource = source("../src/components/AiopsEvidencePanel.vue");
 const timelineSource = source("../src/components/AiopsTimeline.vue");
 
 describe("AIOps workbench layout", () => {
-  it("keeps the command band, the process column and the inspector inside one viewport", () => {
+  it("keeps the alert list and the diagnosis column inside one viewport", () => {
     expect(aiopsViewSource).toMatch(
-      /\.aiops-workbench\s*\{[^}]*grid-template-rows:\s*auto minmax\(0, 1fr\);[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s
+      /\.aiops-workbench\s*\{[^}]*grid-template-columns:\s*minmax\(16rem, 19rem\) minmax\(0, 1fr\);[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s
     );
     expect(aiopsViewSource).toMatch(
-      /\.aiops-workbench__grid\s*\{[^}]*grid-template-columns:\s*minmax\(15rem, 0\.82fr\) minmax\(0, 1\.6fr\) minmax\(18rem, 1fr\);[^}]*overflow:\s*hidden;/s
+      /\.aiops-workbench__primary\s*\{[^}]*display:\s*flex;[^}]*overflow-y:\s*auto;/s
     );
-    expect(aiopsViewSource).toMatch(/\.aiops-workbench__primary\s*\{[^}]*overflow:\s*hidden;/s);
   });
 
-  it("scrolls each column on its own and keeps every column present on narrow screens", () => {
+  it("scrolls each column on its own and stacks them on narrow screens", () => {
     expect(aiopsViewSource).toMatch(/\.aiops-workbench__sources\s*\{[^}]*min-width:\s*0;[^}]*overflow-y:\s*auto;/s);
-    expect(aiopsViewSource).toMatch(/\.aiops-workbench__panel\s*\{[^}]*min-width:\s*0;[^}]*overflow-y:\s*auto;/s);
-    expect(aiopsViewSource).toMatch(/\.aiops-workbench__inspector\s*\{[^}]*min-width:\s*0;/s);
-    expect(aiopsViewSource).toMatch(/@media \(max-width: 1280px\)/);
     expect(aiopsViewSource).toMatch(/@media \(max-width: 1024px\)/);
-    expect(aiopsViewSource).not.toMatch(/\.aiops-workbench__inspector\s*\{[^}]*display:\s*none;/s);
+    expect(aiopsViewSource).toMatch(
+      /@media \(max-width: 1024px\)\s*\{\s*\.aiops-workbench\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*height:\s*auto;[^}]*overflow:\s*visible;/s
+    );
   });
 
   it("keeps long content inside the reading surfaces", () => {

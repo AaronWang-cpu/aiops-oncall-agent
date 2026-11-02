@@ -34,10 +34,10 @@ async function logout(): Promise<void> {
 <template>
   <div class="workspace-layout">
     <aside class="workspace-layout__rail">
-      <RouterLink class="workspace-layout__brand" to="/aiops" aria-label="Super AI 工作台">
+      <RouterLink class="workspace-layout__brand" to="/aiops" aria-label="AIOps 诊断台">
         <Sparkles :size="19" stroke-width="1.8" aria-hidden="true" />
-        <span>Super AI</span>
-        <small>智能工作台</small>
+        <span>AIOps</span>
+        <small>诊断台</small>
       </RouterLink>
       <WorkspaceNavigation :active-path="route.path" />
       <div class="workspace-layout__account">
@@ -54,7 +54,7 @@ async function logout(): Promise<void> {
     <section class="workspace-layout__main">
       <header class="workspace-layout__header">
         <div>
-          <p>AI 工作台</p>
+          <p>AIOps 诊断台</p>
           <h1>{{ routeTitle }}</h1>
         </div>
         <span class="workspace-layout__status" :class="{ 'workspace-layout__status--degraded': !isConnected }" role="status" aria-live="polite">
@@ -92,5 +92,5 @@ async function logout(): Promise<void> {
 .workspace-layout__status--degraded { color: var(--status-danger-text); }
 .workspace-layout__content { height: 100%; min-height: 0; overflow: hidden; width: 100%; }
 .workspace-layout__mobile-nav { display: none; }
-@media (max-width: 760px) { .workspace-layout { display: block; padding-bottom: 4.75rem; } .workspace-layout__rail { display: none; } .workspace-layout__header { min-height: 4.25rem; padding: 0.75rem 1rem; } .workspace-layout__header h1 { font-size: 1.05rem; } .workspace-layout__status { font-size: 0.7rem; } .workspace-layout__content { padding: 1rem; } .workspace-layout__mobile-nav { background: var(--rail); border-top: 1px solid rgb(255 255 255 / 9%); bottom: 0; display: block; left: 0; padding: 0.25rem 0.35rem calc(0.25rem + env(safe-area-inset-bottom)); position: fixed; right: 0; z-index: 10; } .workspace-layout__mobile-nav :deep(.workspace-navigation) { display: grid; gap: 0.15rem; grid-template-columns: repeat(2, 1fr); } .workspace-layout__mobile-nav :deep(.workspace-navigation__link) { border-radius: 0.45rem; flex-direction: column; font-size: 0.66rem; gap: 0.2rem; justify-content: center; min-height: 3.85rem; padding: 0.3rem; } }
+@media (max-width: 760px) { .workspace-layout { display: block; padding-bottom: 4.75rem; } .workspace-layout__rail { display: none; } .workspace-layout__header { min-height: 4.25rem; padding: 0.75rem 1rem; } .workspace-layout__header h1 { font-size: 1.05rem; } .workspace-layout__status { font-size: 0.7rem; } .workspace-layout__content { padding: 1rem; } .workspace-layout__mobile-nav { background: var(--rail); border-top: 1px solid rgb(255 255 255 / 9%); bottom: 0; display: block; left: 0; padding: 0.25rem 0.35rem calc(0.25rem + env(safe-area-inset-bottom)); position: fixed; right: 0; z-index: 10; } .workspace-layout__mobile-nav :deep(.workspace-navigation) { display: grid; gap: 0.15rem; grid-template-columns: minmax(0, 1fr); } .workspace-layout__mobile-nav :deep(.workspace-navigation__link) { border-radius: 0.45rem; flex-direction: column; font-size: 0.66rem; gap: 0.2rem; justify-content: center; min-height: 3.85rem; padding: 0.3rem; } }
 </style>
