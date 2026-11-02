@@ -8,7 +8,7 @@
 - `incident-report/SKILL.md`：事件报告整理
 - `change-risk-review/SKILL.md`：变更风险检查
 
-这些文件不会在项目启动时自动上传或启用。请在对话页面的“Skill 设置”中点击上传，进入某个示例子目录并选择其中的 `SKILL.md`，然后勾选需要使用的 Skill 并保存。
+这些文件不会在项目启动时自动上传或启用。前端工作区当前只保留智能诊断与 MCP 连接，Skill 与提示词的配置能力仍由后端接口提供，需要通过接口上传 `SKILL.md` 并勾选需要使用的 Skill 后保存。
 
 每个文件都以 YAML frontmatter 开头，`name` 与父目录名一致，`description` 描述能力及适用场景。所有示例均为 UTF-8 Markdown、文件名严格为 `SKILL.md` 且小于 64KB。
 

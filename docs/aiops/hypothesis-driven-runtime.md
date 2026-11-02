@@ -14,6 +14,7 @@
 | P4 假设图、预算与报告 | 后端七节点、报告、终态与 SSE 验收通过；旧图已替换 |
 | P5 前端展示与兼容 | 三栏工作区、假设与事故结论展示、模拟/失败标识、流去重与续读验收通过；浏览器截图在 P6 提供 |
 | P6 联合验收与本机启动 | 后端/前端/契约全量回归、跨 owner 隔离与脱敏集成测试、本机启动与浏览器体检、主规格归档均已完成；本机验收发现的六处缺陷已修复 |
+| P7 工作区收敛与诊断页重做 | 前端只保留智能诊断与 MCP 连接；诊断页重排为命令带 + 三列 + 检查器分页，接上持久化证据、调查账本与后端进度；规格与文档已同步 |
 
 ## 诊断配置
 
@@ -189,19 +190,32 @@ Runtime 支持诊断专用 on_termination 回调，统一处理取消、watchdog
 
 ## 前端展示与兼容
 
-AIOps 工作区按左（输入、告警、历史）、中（任务卡片、实时过程、持久报告）、右（证据链、案例库）三栏组织，桌面固定高度、各自内部滚动，窄屏纵向重排且不产生页面横向溢出。
+工作区只围绕告警处理组织：顶部命令带承载诊断输入，来源列收纳活跃告警、历史任务与案例库，过程列承载任务卡、实时过程、执行链与报告，检查器列在结论与假设、现场证据、调查账本三个视图间切换。桌面各列独立滚动，窄屏纵向重排，不隐藏任何信息列，也不产生页面横向溢出。
 
-- 右栏执行链展示全部持久步骤：七节点中文标题、历史 `planner/executor/replanner/evidence_reasoning` 兼容标题，未知节点显示原始名称，不过滤。
-- 假设区展示假设状态、依据（支持/反驳/背景）、关键缺口与假设关系；事故结论单独展示，`unconfirmed` 明确显示“具体根因尚未确认”，不把 `supported` 当作事故根因。
+- 执行链展示全部持久步骤：七节点中文标题、历史 `planner/executor/replanner/evidence_reasoning` 兼容标题，未知节点显示原始名称，不过滤；每次工具调用列出其写入的持久化证据，可点击打开。
+- 假设区展示假设状态、依据（支持/反驳/背景）、关键缺口与假设关系，依据里的证据 ID 是打开证据的入口；事故结论单独展示，`unconfirmed` 明确显示“具体根因尚未确认”，不把 `supported` 当作事故根因。
+- 现场证据按日志、指标、变更等类型分组列出，打开任一条可看到指标点、日志记录或变更记录；一次渲染上限为 10 行/条并明确写出“共 N 条，此处显示前 10 条，其余未显示”，不静默截断。旧任务把 JSON 字符串存进摘要时以“来源 + 结构化返回”代替原文。
+- 调查账本展示轮次、工具调用与内部往返的用量与上限、阶段截止时间，以及每次查询的问题、工具、状态、失败原因与参数。
+- 任务卡进度只使用后端阶段进度，不再用前端估算值。
 - 判断时效以 `assessment_is_current` 与未分析证据数提示，历史快照与当前内容不混用。
 - 模拟模式显示“模拟场景”标识；历史结果缺失模式时不擅自标注真实。任务 `failed` 即使存在兜底报告也同时显示失败，不改为成功。
-- 流消费按事件 ID 去重并保存游标，`error` 之后继续消费到 `complete`；无 `complete` 的 EOF 回载持久终态并按游标续读一次，不把不完整流当作成功，不重新创建诊断。客户端 `streamDiagnostic` 支持 `Last-Event-ID`，聊天 SSE 消费行为不变。
+- 流消费按事件 ID 去重并保存游标，`error` 之后继续消费到 `complete`；无 `complete` 的 EOF 回载持久终态并按游标续读一次，不把不完整流当作成功，不重新创建诊断。客户端 `streamDiagnostic` 支持 `Last-Event-ID`。
+
+证据的原始内容只来自后端持久化证据（`/aiops/diagnostics/{id}/evidence-chain`）。诊断投影里的 `tool_evidence[].data` 为空，工具审计的 `resultSummary` 只含 `evidenceIds`，两者都不能充当证据正文。
 
 ### P5 实际结果
 
-- 新增 `diagnosis` 投影（`activeDiagnosis`）与流游标、去重、续读逻辑；`aiopsClient.streamDiagnostic` 支持 `Last-Event-ID`；`AiopsEvidenceChain`、`AiopsTimeline`、`AiopsReportPanel`、`AiopsView` 同步七节点与假设展示。
-- 前端 `npm run frontend:typecheck`、`npm run frontend:test`（22 文件 / 93 项）、`npm run frontend:build` 全部通过；修复基线中两处既有前端失败（布局与案例库选择断言）。
+- 新增 `diagnosis` 投影（`activeDiagnosis`）与流游标、去重、续读逻辑；`aiopsClient.streamDiagnostic` 支持 `Last-Event-ID`；`AiopsTimeline`、`AiopsReportPanel`、`AiopsView` 同步七节点与假设展示。
+- 前端 `npm run frontend:typecheck`、`npm run frontend:test`、`npm run frontend:build` 全部通过；修复基线中两处既有前端失败（布局与案例库选择断言）。
 - 未发起真实模型或 CLS 请求，未做浏览器桌面/窄屏验收；截图与本机启动属于 P6，需单独授权。
+
+### P7 工作区收敛与诊断页重做（2026-11-02）
+
+- 删除前端对话与知识库模块（视图、组件、store、客户端及其测试，共 36 个文件、-3409 行），默认落地页、通配路由与登录后跳转改为 `/aiops`，侧栏只保留智能诊断与 MCP 连接。后端聊天、知识库与 RAG 能力未改动。
+- 重做诊断页：`AiopsEvidenceChain` 拆分为 `AiopsExecutionChain`、`AiopsConclusionPanel`、`AiopsEvidencePanel`、`AiopsLedgerPanel`，新增 `AiopsEvidenceDrawer`，`AiopsView` 改为命令带 + 三列 + 检查器分页。
+- 验证：`npm run frontend:typecheck`、`npm run frontend:test`（15 文件 / 70 项）、`npm run frontend:build` 通过；真实浏览器在 1600/1280/1000/420 四档宽度检查 `/aiops`，桌面为 320/625/391 三列、1280 折为两列加通栏检查器、窄屏单列，四档均无横向溢出且控制台无错误；选择带持久化证据的历史任务，证据列表、抽屉与账本均渲染真实记录（含旧引擎写入的 JSON 摘要降级）。
+- 未完成项：本机演示账号的模型服务返回 400 `Arrearage`（账户欠费），新发起的诊断在首个模型调用即按核心阶段执行失败收尾，界面正确显示失败与兜底报告。需要充值或更换密钥后才能复现完整的一次成功诊断。
+
 
 ## 联合验收与隔离
 

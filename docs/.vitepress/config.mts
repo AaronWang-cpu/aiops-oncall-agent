@@ -5,6 +5,7 @@ const activeItems = [
 ];
 
 const archivedItems = [
+  { text: "trim-workspace-and-redesign-diagnosis-ui", link: "/changes/archive/2026-11-02-trim-workspace-and-redesign-diagnosis-ui/" },
   { text: "implement-hypothesis-driven-diagnosis", link: "/changes/archive/2026-11-01-implement-hypothesis-driven-diagnosis/" },
   { text: "use-positive-idf-bm25", link: "/changes/archive/2026-07-11-use-positive-idf-bm25/" },
   { text: "show-retrieval-stage-ranks", link: "/changes/archive/2026-07-11-show-retrieval-stage-ranks/" },

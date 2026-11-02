@@ -3,13 +3,19 @@
 ## Purpose
 
 定义具有类型、响应式和经过身份验证的 Vue 应用程序外壳，为产品体验提供稳定的前端传输、路由、状态和反馈边界。
+
 ## Requirements
+
 ### Requirement: Route-based application shell
-认证后的应用 SHALL 提供 `/chat`、`/knowledge`、`/aiops` 和 `/mcp` 工作区，并在桌面侧栏与移动导航中提供一致入口。
+认证后的应用 SHALL 提供 `/aiops` 与 `/mcp` 工作区，并在桌面侧栏与移动导航中提供一致入口；根路径、未知路径与登录后落地页 MUST 指向智能诊断工作区。
 
 #### Scenario: 用户打开 MCP 管理
 - **WHEN** 已认证用户访问 `/mcp`
 - **THEN** 应用 MUST 在共享工作区框架中显示 MCP 连接管理页面。
+
+#### Scenario: 用户打开工作区根路径
+- **WHEN** 已认证用户访问 `/` 或任意未定义路径
+- **THEN** 应用 MUST 将其送到 `/aiops`，MUST NOT 暴露已移除的工作区路由。
 
 ### Requirement: Shared typed frontend transport
 前端 SHALL 通过共享的类型化客户端边界访问后端 JSON 端点和 SSE 流，并且仅消费 `@agent-py/api-contracts` 定义。
@@ -60,26 +66,11 @@
 - **WHEN** 一个工作区接收到现有的异步任务状态
 - **THEN** 它 MUST 将渲染共享的基于文本的中文生命周期处理，而不是单独的未翻译原始状态。
 
-### Requirement: Chat sessions live in the workspace sidebar
-工作区 SHALL 在桌面对话路由的全局左侧栏中提供会话创建和历史会话导航，并使用聊天 store 作为唯一会话状态来源。
-
-#### Scenario: User opens the chat workspace on desktop
-- **WHEN** 已登录 user 进入对话路由且桌面左侧栏可见
-- **THEN** “对话”导航项之后 MUST 显示新建对话入口和按时间倒序排列的历史会话，聊天主区域 MUST NOT 再显示独立历史列
-
-#### Scenario: User creates a conversation from the rail
-- **WHEN** user 点击左侧栏中的新建对话按钮
-- **THEN** 前端 MUST 通过现有 chat store 创建并选中新会话，主对话区域 MUST 切换到该会话
-
-#### Scenario: User selects or deletes rail history
-- **WHEN** user 在左侧栏选择或删除一项历史会话
-- **THEN** 前端 MUST 调用现有会话操作并让左侧栏和主对话区域反映同一状态
-
 ### Requirement: Routed workspaces fill the desktop application surface
 工作区 SHALL 将全局 header 以下、左侧栏右侧的全部可用桌面空间交给当前路由视图，不得使用居中最大宽度或通用外层留白缩小业务界面。
 
 #### Scenario: User opens a primary workspace
-- **WHEN** user 打开对话、知识库或智能诊断任一桌面 Web 路由
+- **WHEN** user 打开智能诊断或 MCP 连接任一桌面 Web 路由
 - **THEN** 对应根视图 MUST 紧贴路由内容区边界并占满可用宽度和高度，MUST NOT 暴露外围 canvas 留白
 
 #### Scenario: Workspace content is longer than its surface
