@@ -24,8 +24,8 @@ describe("edge-to-edge desktop workspace", () => {
   });
 
   it("lets the diagnosis workspace own the full routed surface", () => {
-    expect(aiopsSource).toMatch(/\.aiops-view\s*\{[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s);
-    expect(aiopsSource).not.toMatch(/\.aiops-view\s*\{[^}]*border-radius:/s);
+    expect(aiopsSource).toMatch(/\.aiops-workbench\s*\{[^}]*height:\s*100%;[^}]*overflow:\s*hidden;/s);
+    expect(aiopsSource).not.toMatch(/\.aiops-workbench\s*\{[^}]*border-radius:/s);
   });
 
   it("keeps only the diagnosis and connection sections in the rail navigation", () => {

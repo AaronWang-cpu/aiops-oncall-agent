@@ -30,9 +30,8 @@ const latestEventText = computed<string | null>(() => {
   return null;
 });
 
-const progressPercent = computed<number>(() => {
-  if (!props.isRunning && props.task?.status === "succeeded") return 100;
-  if (!props.isRunning) return 0;
+const progressPercent = computed<number | null>(() => {
+  if (!props.isRunning) return props.task?.status === "succeeded" ? 100 : 0;
   for (let i = props.liveEvents.length - 1; i >= 0; i -= 1) {
     const event = props.liveEvents[i];
     if (event?.type === "complete") return 100;
@@ -40,10 +39,8 @@ const progressPercent = computed<number>(() => {
     if (event?.type === "task.status" && event.task.progress !== undefined) {
       return event.task.progress;
     }
-    if (event?.type === "reference.source") return 65;
-    if (event?.type === "tool.call") return 50;
   }
-  return 10;
+  return null;
 });
 
 function openReport(): void {
@@ -76,11 +73,12 @@ function openReport(): void {
           <div
             class="diag-card__progress-bar"
             :class="{ 'diag-card__progress-bar--pulse': isRunning }"
-            :style="{ width: `${progressPercent}%` }"
+            :style="progressPercent === null ? undefined : { width: `${progressPercent}%` }"
             role="progressbar"
-            :aria-valuenow="progressPercent"
+            :aria-valuenow="progressPercent ?? undefined"
             aria-valuemin="0"
             aria-valuemax="100"
+            :aria-valuetext="progressPercent === null ? '等待后端阶段进度' : undefined"
           />
         </div>
         <p class="diag-card__event-text">
@@ -116,7 +114,7 @@ function openReport(): void {
       </div>
       <div v-else-if="task.status === 'failed'" class="diag-card__report-action diag-card__report-action--failed">
         <FileWarning :size="15" aria-hidden="true" />
-        <span>诊断在报告生成前失败，请检查下方证据链后重新执行。</span>
+        <span>诊断在报告生成前失败，请检查现场证据与执行链后重新执行。</span>
       </div>
     </template>
   </section>

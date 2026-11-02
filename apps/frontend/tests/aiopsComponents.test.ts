@@ -5,15 +5,21 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
+  AiopsDiagnosticEvidence,
   AiopsDiagnosticEvidenceChain,
   AiopsDiagnosticStep,
   AiopsDiagnosticSummary,
   DiagnosisResult,
+  DiagnosisQueryRecord,
   SseEvent
 } from "@agent-py/api-contracts";
 
-import AiopsEvidenceChain from "../src/components/AiopsEvidenceChain.vue";
 import AiopsCaseLibrary from "../src/components/AiopsCaseLibrary.vue";
+import AiopsConclusionPanel from "../src/components/AiopsConclusionPanel.vue";
+import AiopsEvidenceDrawer from "../src/components/AiopsEvidenceDrawer.vue";
+import AiopsEvidencePanel from "../src/components/AiopsEvidencePanel.vue";
+import AiopsExecutionChain from "../src/components/AiopsExecutionChain.vue";
+import AiopsLedgerPanel from "../src/components/AiopsLedgerPanel.vue";
 import AiopsReportPanel from "../src/components/AiopsReportPanel.vue";
 import AiopsRunForm from "../src/components/AiopsRunForm.vue";
 import AiopsTimeline from "../src/components/AiopsTimeline.vue";
@@ -37,30 +43,13 @@ describe("AIOps components", () => {
     expect(wrapper.emitted("run")).toBeUndefined();
   });
 
-  it("renders a readable execution chain with collapsed tool summaries and no raw JSON", () => {
+  it("renders the persisted execution chain and links each tool call to its evidence", async () => {
     const event: SseEvent = {
       id: "event_1",
       type: "tool.call",
       channel: "aiops",
       timestamp: "2026-07-10T00:00:01.000Z",
       toolCall: { id: "tool_1", name: "SearchLog", status: "completed", output: { raw: "x".repeat(400) } }
-    };
-    const chain: AiopsDiagnosticEvidenceChain = {
-      task: diagnostic(),
-      steps: [
-        { id: "step_1", taskId: "diagnostic_1", sequence: 1, phase: "planner", status: "completed", payload: { noSopMatched: true, plan: [{ tool: "SearchLog", purpose: "查询告警窗口日志" }] }, createdAt: "2026-07-10T00:00:00.000Z" },
-        { id: "step_2", taskId: "diagnostic_1", sequence: 2, phase: "executor", status: "completed", payload: { tool: "SearchLog", planStep: { purpose: "查询告警窗口日志" } }, createdAt: "2026-07-10T00:00:01.000Z" },
-        { id: "step_3", taskId: "diagnostic_1", sequence: 3, phase: "replanner", status: "completed", payload: { decision: "report", planIndex: 1, planLength: 1, executionFailed: false }, createdAt: "2026-07-10T00:00:02.000Z" }
-      ],
-      toolCalls: [{
-        id: "tool_1", ownerUserId: "user_1", sessionId: null, diagnosticTaskId: "diagnostic_1", toolName: "SearchLog", status: "completed", arguments: {},
-        resultSummary: JSON.stringify({ recordCount: 20, records: [{ timestamp: "2026-07-10 08:00:00", level: "ERROR", service: "checkout", event: "timeout", message: "request timeout", latency_ms: 2450 }] }),
-        errorMessage: null, startedAt: "2026-07-10T00:00:01.000Z", completedAt: "2026-07-10T00:00:02.000Z", durationMs: 1000, createdAt: "2026-07-10T00:00:01.000Z"
-      }],
-      evidence: [{ id: "evidence_1", taskId: "diagnostic_1", stepId: "step_2", toolCallId: "tool_1", kind: "log", source: "SearchLog", summary: "RAW_EVIDENCE_MARKER", payload: { raw: "RAW_PAYLOAD_MARKER" }, createdAt: "2026-07-10T00:00:01.000Z" }],
-      reports: [{ id: "report_1", title: "Diagnostic report", content: "Persisted report body.", payload: {}, evidenceIds: ["evidence_1"], createdAt: "2026-07-10T00:00:02.000Z" }],
-      reportEvidenceLinks: [{ id: "link_1", taskId: "diagnostic_1", reportId: "report_1", evidenceId: "evidence_1", createdAt: "2026-07-10T00:00:02.000Z" }],
-      checkpoints: []
     };
 
     const timeline = mount(AiopsTimeline, { props: { events: [event], isRunning: true } });
@@ -69,19 +58,19 @@ describe("AIOps components", () => {
     expect(timeline.text()).toContain("SearchLog");
     expect(timeline.text()).not.toContain("raw");
     expect(timeline.text()).not.toContain("x".repeat(400));
-    const execution = mount(AiopsEvidenceChain, { props: { chain } });
+
+    const execution = mount(AiopsExecutionChain, { props: { chain: legacyChain() } });
     expect(execution.text()).toContain("Planner · 生成 1 步诊断计划");
     expect(execution.text()).toContain("Executor · 查询告警窗口日志");
     expect(execution.text()).toContain("Replanner · 证据汇总完成，进入报告");
-    expect(execution.text()).toContain("共返回 20 条日志");
-    expect(execution.text()).toContain("request timeout");
-    expect(execution.findAll("details")).toHaveLength(1);
-    expect(execution.get("details").attributes("open")).toBeUndefined();
-    expect(execution.text()).not.toContain("recordCount");
-    expect(execution.text()).not.toContain("RAW_EVIDENCE_MARKER");
+    expect(execution.text()).toContain("耗时 1000 ms");
     expect(execution.text()).not.toContain("RAW_PAYLOAD_MARKER");
-    expect(execution.text()).not.toContain("evidence_1");
-    expect(execution.text()).not.toContain("Persisted report body");
+    expect(execution.text()).not.toContain("recordCount");
+
+    const evidenceButtons = execution.findAll(".aiops-execution__tool-output button");
+    expect(evidenceButtons).toHaveLength(1);
+    await evidenceButtons[0]!.trigger("click");
+    expect(execution.emitted("open-evidence")).toEqual([["evidence_1"]]);
   });
 
   it("renders the seven-node engine steps and keeps unknown steps visible", () => {
@@ -94,7 +83,7 @@ describe("AIOps components", () => {
       persistedStep(6, "finalize", { status: "succeeded", stopReason: "budget_exhausted" }),
       persistedStep(7, "mystery_node", {})
     ];
-    const wrapper = mount(AiopsEvidenceChain, { props: { chain: emptyChain(steps) } });
+    const wrapper = mount(AiopsExecutionChain, { props: { chain: emptyChain(steps) } });
 
     expect(wrapper.text()).toContain("准备上下文 · 模拟模式，可用工具 2 项");
     expect(wrapper.text()).toContain("构建查询 · 计划 1 项查询");
@@ -109,29 +98,31 @@ describe("AIOps components", () => {
     expect(wrapper.findAll(".aiops-execution__steps li")).toHaveLength(7);
   });
 
-  it("shows supported hypotheses with evidence, gaps and an unconfirmed conclusion", () => {
-    const wrapper = mount(AiopsEvidenceChain, {
-      props: { chain: emptyChain([]), diagnosis: diagnosis() }
+  it("shows supported hypotheses with evidence references, gaps and an unconfirmed conclusion", async () => {
+    const wrapper = mount(AiopsConclusionPanel, {
+      props: { diagnosis: diagnosis(), taskStatus: "succeeded" }
     });
 
-    expect(wrapper.text()).toContain("假设与判断");
+    expect(wrapper.text()).toContain("事故结论");
     expect(wrapper.text()).toContain("有证据支持");
     expect(wrapper.text()).toContain("订单服务连接池耗尽");
-    expect(wrapper.text()).toContain("支持：日志显示连接超时");
+    expect(wrapper.text()).toContain("支持");
+    expect(wrapper.text()).toContain("日志显示连接超时");
     expect(wrapper.text()).toContain("待验证：是否只有订单服务受影响");
     expect(wrapper.text()).toContain("因果关联");
     expect(wrapper.text()).toContain("连接池耗尽导致网关超时");
     expect(wrapper.text()).toContain("具体根因尚未确认");
     expect(wrapper.text()).not.toContain("事故根因已确认");
-    expect(wrapper.text()).not.toContain("E1");
-    expect(wrapper.findAll("details")).toHaveLength(0);
+
+    await wrapper.get(".aiops-conclusion__links button").trigger("click");
+    expect(wrapper.emitted("open-evidence")).toEqual([["E1"]]);
   });
 
   it("marks stale assessments and unassessed evidence instead of mixing them", () => {
-    const wrapper = mount(AiopsEvidenceChain, {
+    const wrapper = mount(AiopsConclusionPanel, {
       props: {
-        chain: emptyChain([]),
-        diagnosis: { ...diagnosis(), assessment_is_current: false, unassessed_evidence_ids: ["E9"] }
+        diagnosis: { ...diagnosis(), assessment_is_current: false, unassessed_evidence_ids: ["E9"] },
+        taskStatus: "succeeded"
       }
     });
 
@@ -140,15 +131,100 @@ describe("AIOps components", () => {
   });
 
   it("labels mock investigations and never marks unknown historical modes as real", () => {
-    const mocked = mount(AiopsEvidenceChain, {
-      props: { chain: emptyChain([]), diagnosis: { ...diagnosis(), mode: "mock" } }
+    const mocked = mount(AiopsConclusionPanel, {
+      props: { diagnosis: { ...diagnosis(), mode: "mock" }, taskStatus: "succeeded" }
     });
     expect(mocked.text()).toContain("模拟场景");
 
-    const legacy = mount(AiopsEvidenceChain, { props: { chain: emptyChain([]) } });
+    const legacy = mount(AiopsConclusionPanel, { props: { diagnosis: null, taskStatus: null } });
     expect(legacy.text()).not.toContain("模拟场景");
     expect(legacy.text()).not.toContain("假设与判断");
     expect(legacy.text()).not.toContain("真实数据");
+  });
+
+  it("lists collected evidence by kind and flags the ones outside the conclusion", async () => {
+    const wrapper = mount(AiopsEvidencePanel, {
+      props: {
+        evidence: [
+          logEvidence("evidence_log", "17:20 订单服务连接超时 37 次"),
+          metricEvidence("evidence_metric", "order_db_connection_pool_usage 峰值 1.0")
+        ],
+        unassessedIds: ["evidence_metric"]
+      }
+    });
+
+    expect(wrapper.text()).toContain("日志 · 1 条");
+    expect(wrapper.text()).toContain("指标 · 1 条");
+    expect(wrapper.text()).toContain("17:20 订单服务连接超时 37 次");
+    expect(wrapper.text()).toContain("order_db_connection_pool_usage 峰值 1.0");
+    expect(wrapper.text()).toContain("未纳入结论");
+
+    await wrapper.findAll(".aiops-evidence button")[1]!.trigger("click");
+    expect(wrapper.emitted("open-evidence")).toEqual([["evidence_metric"]]);
+  });
+
+  it("opens the raw metric evidence with its real values and states what was cut", () => {
+    const wrapper = mount(AiopsEvidenceDrawer, {
+      props: { evidence: metricEvidence("evidence_metric", "连接池使用率") }
+    });
+
+    expect(wrapper.text()).toContain("指标");
+    expect(wrapper.text()).toContain("order_db_connection_pool_usage");
+    expect(wrapper.text()).toContain("0.41");
+    expect(wrapper.text()).toContain("1");
+    expect(wrapper.text()).toContain("共 14 点，此处显示前 10 点，其余未显示。");
+    expect(wrapper.text()).toContain("QueryMetric");
+  });
+
+  it("closes the evidence drawer when the operator dismisses it", async () => {
+    const wrapper = mount(AiopsEvidenceDrawer, {
+      props: { evidence: logEvidence("evidence_log", "连接超时") }
+    });
+
+    await wrapper.get('button[aria-label="关闭证据详情"]').trigger("click");
+    expect(wrapper.emitted("close")).toEqual([[]]);
+  });
+
+  it("does not dump a legacy JSON summary into the evidence list", () => {
+    const legacy = { ...logEvidence("evidence_legacy", '{"recordCount":10,"records":[]}') };
+    const wrapper = mount(AiopsEvidencePanel, { props: { evidence: [legacy], unassessedIds: [] } });
+
+    expect(wrapper.text()).toContain("SearchLog 的结构化返回");
+    expect(wrapper.text()).not.toContain("recordCount");
+  });
+
+  it("falls back to a readable title while still showing the stored records", () => {
+    const legacy = { ...logEvidence("evidence_legacy", '{"recordCount":10,"records":[]}') };
+    const wrapper = mount(AiopsEvidenceDrawer, { props: { evidence: legacy } });
+
+    expect(wrapper.get("h3").text()).toBe("证据原始内容");
+    expect(wrapper.text()).toContain("connection timeout");
+    expect(wrapper.get("details summary").text()).toContain("原始返回内容");
+  });
+
+  it("shows budget usage and why a query failed", () => {
+    const record: DiagnosisQueryRecord = {
+      query_id: "query_1",
+      hypothesis_ids: ["H1"],
+      question: "查询订单库连接池指标",
+      tool_name: "QueryMetric",
+      arguments: { metric_names: ["order_db_connection_pool_usage"] },
+      status: "failed",
+      status_reason: "指标不在白名单内。"
+    };
+    const wrapper = mount(AiopsLedgerPanel, {
+      props: { budget: diagnosis().budget, queryRecords: [record] }
+    });
+
+    expect(wrapper.text()).toContain("查询轮次");
+    expect(wrapper.text()).toContain("1 / 5");
+    expect(wrapper.text()).toContain("工具调用");
+    expect(wrapper.text()).toContain("1 / 20");
+    expect(wrapper.text()).toContain("查询订单库连接池指标");
+    expect(wrapper.text()).toContain("QueryMetric");
+    expect(wrapper.text()).toContain("失败");
+    expect(wrapper.text()).toContain("指标不在白名单内。");
+    expect(wrapper.text()).toContain("关联 H1");
   });
 
   it("renders a persisted Markdown report as the center reading surface", () => {
@@ -312,6 +388,82 @@ function emptyChain(steps: readonly AiopsDiagnosticStep[]): AiopsDiagnosticEvide
     reports: [],
     reportEvidenceLinks: [],
     checkpoints: []
+  };
+}
+
+function legacyChain(): AiopsDiagnosticEvidenceChain {
+  return {
+    task: diagnostic(),
+    steps: [
+      { id: "step_1", taskId: "diagnostic_1", sequence: 1, phase: "planner", status: "completed", payload: { noSopMatched: true, plan: [{ tool: "SearchLog", purpose: "查询告警窗口日志" }] }, createdAt: "2026-07-10T00:00:00.000Z" },
+      { id: "step_2", taskId: "diagnostic_1", sequence: 2, phase: "executor", status: "completed", payload: { tool: "SearchLog", planStep: { purpose: "查询告警窗口日志" } }, createdAt: "2026-07-10T00:00:01.000Z" },
+      { id: "step_3", taskId: "diagnostic_1", sequence: 3, phase: "replanner", status: "completed", payload: { decision: "report", planIndex: 1, planLength: 1, executionFailed: false }, createdAt: "2026-07-10T00:00:02.000Z" }
+    ],
+    toolCalls: [{
+      id: "tool_1", ownerUserId: "user_1", sessionId: null, diagnosticTaskId: "diagnostic_1", toolName: "SearchLog", status: "completed", arguments: {},
+      resultSummary: JSON.stringify({ evidenceIds: ["evidence_1"] }),
+      errorMessage: null, startedAt: "2026-07-10T00:00:01.000Z", completedAt: "2026-07-10T00:00:02.000Z", durationMs: 1000, createdAt: "2026-07-10T00:00:01.000Z"
+    }],
+    evidence: [{
+      id: "evidence_1",
+      taskId: "diagnostic_1",
+      stepId: "step_2",
+      toolCallId: "tool_1",
+      kind: "log",
+      source: "SearchLog",
+      summary: "17:20 订单服务连接超时 37 次",
+      payload: { data: { recordCount: 20, raw: "RAW_PAYLOAD_MARKER" } },
+      createdAt: "2026-07-10T00:00:01.000Z"
+    }],
+    reports: [{ id: "report_1", title: "Diagnostic report", content: "Persisted report body.", payload: {}, evidenceIds: ["evidence_1"], createdAt: "2026-07-10T00:00:02.000Z" }],
+    reportEvidenceLinks: [{ id: "link_1", taskId: "diagnostic_1", reportId: "report_1", evidenceId: "evidence_1", createdAt: "2026-07-10T00:00:02.000Z" }],
+    checkpoints: []
+  };
+}
+
+function logEvidence(id: string, summary: string): AiopsDiagnosticEvidence {
+  return {
+    id,
+    taskId: "diagnostic_1",
+    stepId: "step_2",
+    toolCallId: "tool_1",
+    kind: "log",
+    source: "SearchLog",
+    summary,
+    payload: { data: { service: "order-service", recordCount: 1, records: [{ level: "ERROR", message: "connection timeout", timestamp: "2026-07-10 17:20:00" }] } },
+    createdAt: "2026-07-10T00:00:01.000Z"
+  };
+}
+
+function metricEvidence(id: string, summary: string): AiopsDiagnosticEvidence {
+  const points = Array.from({ length: 14 }, (_, index) => ({
+    timestamp: `2026-07-10T00:${String(index).padStart(2, "0")}:00Z`,
+    value: index === 0 ? 0.41 : index === 13 ? 1 : 0.5 + index / 100
+  }));
+  return {
+    id,
+    taskId: "diagnostic_1",
+    stepId: "step_3",
+    toolCallId: "tool_2",
+    kind: "metric",
+    source: "QueryMetric",
+    summary,
+    payload: {
+      data: {
+        service: "order-service",
+        aggregation: "avg",
+        seriesCount: 1,
+        series: [{
+          metric_name: "order_db_connection_pool_usage",
+          unit: "ratio",
+          aggregation: "avg",
+          labels: { service: "order-service" },
+          points,
+          sampleCount: points.length
+        }]
+      }
+    },
+    createdAt: "2026-07-10T00:00:03.000Z"
   };
 }
 
