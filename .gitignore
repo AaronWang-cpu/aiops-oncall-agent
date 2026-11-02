@@ -19,3 +19,5 @@ config/aiops-project-knowledge.yaml
 # 本地运行配置只保存在操作者机器上，只提交 *.template.json
 config/project.json
 config/user.project.json
+# 演示覆盖配置同样只保存在本机，由 scripts/serve_aiops_demo.py 合并使用
+config/demo.project.json

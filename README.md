@@ -172,6 +172,17 @@ npm run dev -- --host 127.0.0.1
 - Milvus：`http://127.0.0.1:19530`
 - Attu：`http://127.0.0.1:8001`
 
+### 模拟场景演示
+
+内置场景 `checkout-peak-incident.json` 提供三个告警以及它们共享的日志、指标与变更事实，用于在没有真实告警源时演示完整诊断链路。演示值（`mode=mock`、场景路径、项目知识路径与调大后的超时预算）写在被忽略的 `config/demo.project.json`，由 `apps/backend/scripts/serve_aiops_demo.py` 合并到本地配置后启动，因此 `config/project.json` 与 `config/user.project.json` 保持普通本地配置，仓库内文件也不携带演示值：
+
+```bash
+cd apps/backend
+uv run python scripts/serve_aiops_demo.py
+```
+
+前端沿用 `npm run dev -- --host 127.0.0.1`。启动后登录前端，在诊断台的告警列表中任选一条告警即可开始诊断；`config/aiops-project-knowledge.yaml` 需自行创建，缺失时诊断会明确失败。
+
 ## 真实日志与告警教程
 
 上传 CLS 日志、发布本地 Alertmanager 告警、索引 SOP 与从前端执行 AIOps 诊断均为显式操作，不属于日常启动流程。请按照[真实日志与告警教程](docs/tutorials/real-log-and-alert.md)执行。
