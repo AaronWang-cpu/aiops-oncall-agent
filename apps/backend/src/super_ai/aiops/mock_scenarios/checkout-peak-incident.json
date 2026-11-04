@@ -6,7 +6,7 @@
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "severity": "critical",
       "starts_at": "2026-03-24T10:20:00Z",
-      "summary": "订单服务数据库连接池耗尽，获取连接超时，接口错误率升至 9%，P99 延迟升至 4.5s"
+      "summary": "order-service 创建订单接口 5 分钟 503 比例 9%，P99 延迟 4.5s，连接获取等待持续增长"
     },
     {
       "name": "PaymentFraudCheckLatencyHigh",
@@ -14,7 +14,7 @@
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "severity": "critical",
       "starts_at": "2026-03-24T10:26:00Z",
-      "summary": "支付风控检查 P99 延迟升至 2.4s，占满支付耗时预算，支付接口错误率升至 12%"
+      "summary": "payment-service 支付确认接口风控检查 P99 延迟 2.4s，支付失败率升至 12%"
     },
     {
       "name": "InventoryLockWaitHigh",
@@ -22,202 +22,3340 @@
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
       "severity": "warning",
       "starts_at": "2026-03-24T11:05:00Z",
-      "summary": "库存锁等待 P99 升至 4.2s，出现死锁重试，库存接口错误率升至 9%"
+      "summary": "inventory-service 库存预占锁等待 P99 4.2s，出现死锁重试，扣减失败率 9%"
     }
   ],
   "logs": [
     {
-      "timestamp": "2026-03-24T10:12:00Z",
+      "timestamp": "2026-03-24T09:32:00Z",
+      "service": "auth-service",
+      "instance": "auth-service-5f8c7d6b9-zt7qp",
+      "level": "INFO",
+      "message": "JWK cache refreshed, keys=4 kid=rsa-2026-03"
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 58ms traceId=8f1c00a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 64ms traceId=8f1c00a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10480"
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 60ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 61ms traceId=8f1c01a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 66ms traceId=8f1c01a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10481"
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 64ms traceId=8f1c02a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 68ms traceId=8f1c02a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10482"
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 62ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-event-consumer",
+      "instance": "order-event-consumer-8c9d0e1f2-ab3cd",
+      "level": "INFO",
+      "message": "consumer group rebalanced partitions=12"
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 67ms traceId=8f1c03a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 70ms traceId=8f1c03a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10483"
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 70ms traceId=8f1c04a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 72ms traceId=8f1c04a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10484"
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 64ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=6, idle=14, waiting=0)"
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "level": "INFO",
+      "message": "cart redis cache hit ratio 98.6%"
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 73ms traceId=8f1c05a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 74ms traceId=8f1c05a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10485"
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=7, idle=13, waiting=0)"
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order-ds query timing: avg=56ms p99=118ms, slow_query_count=0, innodb row lock waits=0"
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 76ms traceId=8f1c06a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 76ms traceId=8f1c06a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10486"
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 66ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=14, idle=6, waiting=0)"
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 79ms traceId=8f1c07a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 78ms traceId=8f1c07a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10487"
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=16, idle=4, waiting=0)"
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order-service started with new datasource config, order-ds pool maximumPoolSize=20 minimumIdle=5"
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 82ms traceId=8f1c08a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 80ms traceId=8f1c08a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10488"
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 68ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=17, idle=3, waiting=2)"
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "OrderApplicationService#createOrder invoked traceId=8f1c07a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 85ms traceId=8f1c09a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 201 in 82ms traceId=8f1c09a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:10489"
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=19, idle=1, waiting=5)"
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=4)"
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "product-search-service",
+      "instance": "product-search-service-7d8e9f0a1-xk2mn",
+      "level": "WARN",
+      "message": "search rejected 12 requests, wildcard query on high-cardinality field, thread_pool search queue 340"
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4570ms traceId=8f1c10a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4310ms traceId=8f1c10a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104810"
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 70ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=7)"
+    },
+    {
+      "timestamp": "2026-03-24T10:10:30Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "ERROR",
       "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
     },
     {
-      "timestamp": "2026-03-24T10:13:00Z",
+      "timestamp": "2026-03-24T10:10:30Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "ERROR",
-      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out"
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4607ms traceId=8f1c11a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4351ms traceId=8f1c11a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104811"
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=10)"
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=9)"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4644ms traceId=8f1c12a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4392ms traceId=8f1c12a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104812"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 72ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=13)"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "level": "WARN",
+      "message": "RedisCommandTimeoutException after 480ms on key cart:promotion:index, command=GET"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:10Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:12:10Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4681ms traceId=8f1c13a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4433ms traceId=8f1c13a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104813"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=15)"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=14)"
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "fulfillment-service",
+      "instance": "fulfillment-service-9e0f1a2b3-ef4gh",
+      "level": "WARN",
+      "message": "carrier booking returned 503 from primary-carrier-api, retry scheduled"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4718ms traceId=8f1c14a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4474ms traceId=8f1c14a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104814"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 74ms"
     },
     {
       "timestamp": "2026-03-24T10:14:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "INFO",
-      "message": "连接池诊断：池内 SQL 平均耗时 60ms（与告警前一致），单请求持有时长未上升；订单 QPS 640 低于基线 820，按持有时长折算的稳态并发需求约 38 个连接，超过变更后的上限 20，连接获取等待自 10:06 配置下发后出现"
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=18)"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "level": "WARN",
+      "message": "route /api/orders returned 503, upstream order-service rejected 37 requests"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:20Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:14:20Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
     },
     {
       "timestamp": "2026-03-24T10:15:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "INFO",
-      "message": "依赖观测：mysql-order 慢查询 0 条，活跃会话 12/500，CPU 38%，IO 等待 2%，无未提交长事务；order-service 到 mysql-order 的连接无重传"
+      "message": "GET /api/orders 503 in 4755ms traceId=8f1c15a4b7e2"
     },
     {
-      "timestamp": "2026-03-24T10:16:00Z",
+      "timestamp": "2026-03-24T10:15:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "INFO",
-      "message": "饱和区间观测：10:15 起 active 持续 20、waiting 增长；同期 order-service 客户端统计 payment-service p99 62ms、inventory-service p99 48ms，未出现下游调用超时"
+      "message": "POST /api/orders 503 in 4515ms traceId=8f1c15a4b7e2"
     },
     {
-      "timestamp": "2026-03-24T10:17:00Z",
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104815"
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=20)"
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "WARN",
-      "message": "HikariPool-1 saturated: total=20 active=20 idle=0 waiting=18；连接获取等待自 10:06 配置下发后持续，池内 SQL 平均耗时仍为 60ms，QPS 640 未突增，按持有时长折算的稳态并发需求约 38，超过当前上限 20"
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=18)"
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order-ds query timing: avg=58ms p99=121ms, slow_query_count=0, innodb row lock waits=0"
     },
     {
       "timestamp": "2026-03-24T10:16:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-qq8v7",
       "level": "INFO",
-      "message": "order-service 实例健康检查通过，本地连接池 active=6 waiting=0"
+      "message": "GET /api/orders 503 in 4792ms traceId=8f1c16a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4556ms traceId=8f1c16a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104816"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 76ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=23)"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 200 in 128ms traceId=3b7d00e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324100"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "external-payment-gateway response avg=82ms timeout_count=0 status=200"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "promotion-service",
+      "instance": "promotion-service-0a1b2c3d4-ij5kl",
+      "level": "WARN",
+      "message": "process cpu usage 78% during rule evaluation"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:40Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:16:40Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4829ms traceId=8f1c17a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4597ms traceId=8f1c17a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104817"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=26)"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=24)"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 200 in 132ms traceId=3b7d01e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324101"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4866ms traceId=8f1c18a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4638ms traceId=8f1c18a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104818"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 78ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=28)"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 200 in 136ms traceId=3b7d02e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324102"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "fraud-check latency p99=142ms budget=300ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "level": "INFO",
+      "message": "cart read latency p99 96ms within SLO"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:05Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:18:05Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4903ms traceId=8f1c19a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4679ms traceId=8f1c19a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104819"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=31)"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=31)"
     },
     {
       "timestamp": "2026-03-24T10:19:00Z",
       "service": "payment-service",
-      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 200 in 140ms traceId=3b7d03e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324103"
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-event-consumer",
+      "instance": "order-event-consumer-8c9d0e1f2-ab3cd",
       "level": "WARN",
-      "message": "fraud-check latency p99=2410ms exceeds budget 300ms；client 侧计时：排队 3ms、传输 8ms、fraud-detection-service 处理 2399ms；本次调用命中 ruleChain=device+behavior+ml_v3（v2.7.0 新增）"
+      "message": "consumer lag 12480 on topic order-events partition 3"
     },
     {
       "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4940ms traceId=8f1c20a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4720ms traceId=8f1c20a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104820"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 80ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=33)"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 200 in 144ms traceId=3b7d04e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324104"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "fraud-check latency p99=168ms budget=300ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "product-search-service",
+      "instance": "product-search-service-7d8e9f0a1-xk2mn",
+      "level": "INFO",
+      "message": "product search p95 240ms recovered"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:15Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:20:15Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 4977ms traceId=8f1c21a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4761ms traceId=8f1c21a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104821"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=36)"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 200 in 148ms traceId=3b7d05e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324105"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "fraud-detection-service resource snapshot: cpu 34% heap 41% gc_pause 8ms inflight 12 downstream_p99 40ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "fulfillment-service",
+      "instance": "fulfillment-service-9e0f1a2b3-ef4gh",
+      "level": "INFO",
+      "message": "waybill created for orderId=SO20260324071"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5014ms traceId=8f1c22a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4802ms traceId=8f1c22a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104822"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 82ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=39)"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order-ds query timing: avg=57ms p99=116ms, slow_query_count=0, innodb row lock waits=0"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2472ms traceId=3b7d06e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324106"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "external-payment-gateway response avg=88ms timeout_count=0 status=200"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2315ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2305ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:35Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "HikariPool-1 - Connection is not available, request timed out after 30000ms (total=20, active=20, idle=0, waiting=37)"
+    },
+    {
+      "timestamp": "2026-03-24T10:22:35Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "ERROR",
+      "message": "GET /api/orders failed: java.sql.SQLTransientConnectionException: order-ds - Connection is not available, request timed out after 30000ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5051ms traceId=8f1c23a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4843ms traceId=8f1c23a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104823"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2484ms traceId=3b7d07e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324107"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "WARN",
+      "message": "fraud-check latency p99=2180ms exceeds budget 300ms; client timing queue=3ms transport=8ms server=2374ms ruleChain=device+behavior+ml_v3"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "promotion-service",
+      "instance": "promotion-service-0a1b2c3d4-ij5kl",
+      "level": "INFO",
+      "message": "promotion trial calculation p95 210ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:23:20Z",
       "service": "payment-service",
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "level": "ERROR",
       "message": "POST /api/pay failed: fraud check timed out after 2400ms, caller=fraud-detection-service"
     },
     {
-      "timestamp": "2026-03-24T10:21:00Z",
-      "service": "payment-service",
-      "instance": "payment-service-5f8b7c9d4-x7k2m",
-      "level": "INFO",
-      "message": "external-payment-gateway 响应正常 avg=85ms，超时次数 0，可排除支付网关问题"
-    },
-    {
-      "timestamp": "2026-03-24T10:19:30Z",
+      "timestamp": "2026-03-24T10:23:30Z",
       "service": "fraud-detection-service",
       "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
       "level": "INFO",
-      "message": "check request completed in 2385ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2315ms"
+      "message": "check request completed in 2322ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2312ms schemaVersion=v2.7.0"
     },
     {
-      "timestamp": "2026-03-24T10:20:30Z",
-      "service": "fraud-detection-service",
-      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
       "level": "INFO",
-      "message": "resource snapshot: cpu 34%, heap 41%, gc pause 8ms, inflight 12, downstream p99 40ms"
+      "message": "GET /api/orders 503 in 5088ms traceId=8f1c24a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4884ms traceId=8f1c24a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104824"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 84ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
     },
     {
       "timestamp": "2026-03-24T10:24:00Z",
       "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2496ms traceId=3b7d08e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324108"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "level": "INFO",
+      "message": "checkout route circuit breaker state CLOSED, error rate 0.07"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:30Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "WARN",
+      "message": "fraud-check latency p99=2410ms exceeds budget 300ms; client timing queue=3ms transport=8ms server=2374ms ruleChain=device+behavior+ml_v3"
+    },
+    {
+      "timestamp": "2026-03-24T10:24:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2329ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2319ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5125ms traceId=8f1c25a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4925ms traceId=8f1c25a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104825"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "WARN",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=38)"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "payment-service",
       "instance": "payment-service-5f8b7c9d4-t9p3n",
       "level": "INFO",
-      "message": "payment-service 实例心跳正常，到 mysql-payment 的连接正常"
+      "message": "POST /api/pay 500 in 2508ms traceId=3b7d09e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324109"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "auth-service",
+      "instance": "auth-service-5f8c7d6b9-zt7qp",
+      "level": "WARN",
+      "message": "token verify latency p99 210ms above soft target"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:10Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "ERROR",
+      "message": "POST /api/pay failed: fraud check timed out after 2400ms, caller=fraud-detection-service"
+    },
+    {
+      "timestamp": "2026-03-24T10:25:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2336ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2326ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5162ms traceId=8f1c26a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 4966ms traceId=8f1c26a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104826"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 86ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2520ms traceId=3b7d10e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324110"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "WARN",
+      "message": "fraud-check latency p99=2385ms exceeds budget 300ms; client timing queue=3ms transport=8ms server=2374ms ruleChain=device+behavior+ml_v3"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-event-consumer",
+      "instance": "order-event-consumer-8c9d0e1f2-ab3cd",
+      "level": "INFO",
+      "message": "consumer lag back to 640"
+    },
+    {
+      "timestamp": "2026-03-24T10:26:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2343ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2333ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5199ms traceId=8f1c27a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 5007ms traceId=8f1c27a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104827"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2532ms traceId=3b7d11e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324111"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2350ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2340ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:27:40Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "ERROR",
+      "message": "POST /api/pay failed: fraud check timed out after 2400ms, caller=fraud-detection-service"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5236ms traceId=8f1c28a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 5048ms traceId=8f1c28a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104828"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 88ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2544ms traceId=3b7d12e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324112"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "external-payment-gateway response avg=79ms timeout_count=0 status=200"
+    },
+    {
+      "timestamp": "2026-03-24T10:28:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2357ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2347ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5273ms traceId=8f1c29a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 5089ms traceId=8f1c29a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-m4t9k",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104829"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=20, idle=0, waiting=41)"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2556ms traceId=3b7d13e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324113"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment-service heartbeat ok, mysql-payment connections healthy"
+    },
+    {
+      "timestamp": "2026-03-24T10:29:30Z",
+      "service": "fraud-detection-service",
+      "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
+      "level": "INFO",
+      "message": "check request completed in 2364ms; rule timings: device_fingerprint 12ms, behavior_sequence 38ms, ml_v3 2354ms schemaVersion=v2.7.0"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5310ms traceId=8f1c30a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 5130ms traceId=8f1c30a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104830"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "Servlet.service() for dispatcherServlet completed in 90ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "HikariPool-1 - Pool stats (total=20, active=7, idle=13, waiting=0)"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2568ms traceId=3b7d14e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324114"
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "GET /api/orders 503 in 5347ms traceId=8f1c31a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "POST /api/orders 503 in 5171ms traceId=8f1c31a4b7e2"
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-qq8v7",
+      "level": "INFO",
+      "message": "order detail cache hit order:detail:104831"
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "level": "INFO",
+      "message": "GET /api/orders 200 in 71ms after upstream rate limit applied"
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "POST /api/pay 500 in 2580ms traceId=3b7d15e91c04"
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-t9p3n",
+      "level": "INFO",
+      "message": "payment order status updated orderId=SO20260324115"
+    },
+    {
+      "timestamp": "2026-03-24T10:55:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "INFO",
+      "message": "reserve stock for sku_group=A completed in 42ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:56:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "INFO",
+      "message": "reserve stock for sku_group=A completed in 43ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:57:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "INFO",
+      "message": "reserve stock for sku_group=A completed in 44ms"
+    },
+    {
+      "timestamp": "2026-03-24T10:58:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 1560ms, retry attempt=4"
+    },
+    {
+      "timestamp": "2026-03-24T10:59:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 1780ms, retry attempt=1"
+    },
+    {
+      "timestamp": "2026-03-24T11:00:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 2000ms, retry attempt=2"
+    },
+    {
+      "timestamp": "2026-03-24T11:00:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "WARN",
+      "message": "deadlock detected on sku_group=A, rolling back transaction and retrying (attempt=3), lock order segmented (v3.0.0)"
+    },
+    {
+      "timestamp": "2026-03-24T11:01:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 2220ms, retry attempt=3"
+    },
+    {
+      "timestamp": "2026-03-24T11:02:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 2440ms, retry attempt=4"
+    },
+    {
+      "timestamp": "2026-03-24T11:02:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "ERROR",
+      "message": "acquire inventory lock timeout after 5000ms, retries=5 exhausted, stock decrement failed"
     },
     {
       "timestamp": "2026-03-24T11:03:00Z",
       "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
       "level": "WARN",
-      "message": "inventory lock deadlock detected on sku_group=A, rolling back transaction and retrying (attempt=3)；锁获取顺序已切换为 v3.0.0 引入的分段锁顺序（与告警前不同）"
+      "message": "reserve stock for sku_group=A waited 2660ms, retry attempt=1"
+    },
+    {
+      "timestamp": "2026-03-24T11:03:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "ERROR",
+      "message": "org.springframework.dao.CannotAcquireLockException: could not execute statement; SQL [update stock ...]"
     },
     {
       "timestamp": "2026-03-24T11:04:00Z",
       "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 2880ms, retry attempt=2"
+    },
+    {
+      "timestamp": "2026-03-24T11:04:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "innodb deadlock counter increased to 12 within current window"
+    },
+    {
+      "timestamp": "2026-03-24T11:05:00Z",
+      "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
-      "level": "ERROR",
-      "message": "acquire inventory lock timeout after 5000ms, retries=5 exhausted, 库存扣减失败"
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 3100ms, retry attempt=3"
     },
     {
       "timestamp": "2026-03-24T11:05:00Z",
       "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
       "level": "INFO",
-      "message": "依赖观测：mysql-order 最长大事务 120ms，CPU 45%，IO 等待 3%，无未提交长事务；innodb 死锁计数随库存扣减重试次数同步上升"
+      "message": "inventory-mysql longest trx 120ms cpu 45% io_wait 3% uncommitted_trx 0"
     },
     {
       "timestamp": "2026-03-24T11:06:00Z",
       "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 3320ms, retry attempt=4"
+    },
+    {
+      "timestamp": "2026-03-24T11:07:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 3540ms, retry attempt=1"
+    },
+    {
+      "timestamp": "2026-03-24T11:07:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
       "level": "INFO",
-      "message": "inventory-service 实例本地缓存预热完成，读写正常"
+      "message": "inventory-service local cache warming finished"
+    },
+    {
+      "timestamp": "2026-03-24T11:08:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 3760ms, retry attempt=2"
+    },
+    {
+      "timestamp": "2026-03-24T11:09:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 3980ms, retry attempt=3"
+    },
+    {
+      "timestamp": "2026-03-24T11:10:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-z8k3p",
+      "level": "WARN",
+      "message": "reserve stock for sku_group=A waited 4200ms, retry attempt=4"
     }
   ],
   "metrics": [
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.34
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 824.0
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:00:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.34
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 824.0
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:01:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.34
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 824.0
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:02:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.34
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 824.0
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.34
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 824.0
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:04:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
     {
       "timestamp": "2026-03-24T10:05:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "metric_name": "order_db_connection_pool_usage",
-      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
-      "value": 0.38
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.34
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 824.0
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:05:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.52
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 760.0
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.52
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 760.0
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:07:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
     },
     {
       "timestamp": "2026-03-24T10:08:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "metric_name": "order_db_connection_pool_usage",
-      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
-      "value": 1.0
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
     },
     {
-      "timestamp": "2026-03-24T10:22:00Z",
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 760.0
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:08:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "metric_name": "order_db_connection_pool_usage",
-      "labels": {"instance": "order-service-7c9f4d8b5-hxz2q"},
-      "value": 1.0
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 760.0
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.004
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 208.0
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:09:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
     },
     {
       "timestamp": "2026-03-24T10:10:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
-      "metric_name": "order_request_error_rate",
-      "labels": {"endpoint": "/api/orders", "status": "500"},
-      "value": 0.005
-    },
-    {
-      "timestamp": "2026-03-24T10:18:00Z",
-      "service": "order-service",
-      "instance": "order-service-7c9f4d8b5-hxz2q",
-      "metric_name": "order_request_error_rate",
-      "labels": {"endpoint": "/api/orders", "status": "500"},
-      "value": 0.09
-    },
-    {
-      "timestamp": "2026-03-24T10:10:00Z",
-      "service": "order-service",
-      "instance": "order-service-7c9f4d8b5-hxz2q",
-      "metric_name": "order_request_latency_p99",
-      "labels": {"endpoint": "/api/orders"},
-      "value": 202.0
-    },
-    {
-      "timestamp": "2026-03-24T10:18:00Z",
-      "service": "order-service",
-      "instance": "order-service-7c9f4d8b5-hxz2q",
-      "metric_name": "order_request_latency_p99",
-      "labels": {"endpoint": "/api/orders"},
-      "value": 4500.0
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
     },
     {
       "timestamp": "2026-03-24T10:10:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "metric_name": "order_qps",
-      "labels": {"endpoint": "/api/orders"},
-      "value": 820.0
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 760.0
     },
     {
-      "timestamp": "2026-03-24T10:22:00Z",
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.052
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 2280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.001
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 176.0
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:10:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "metric_name": "order_qps",
-      "labels": {"endpoint": "/api/orders"},
-      "value": 640.0
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 760.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.052
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 2280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:11:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.052
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 2280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 104.0
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 488.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.052
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 2280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 104.0
+    },
+    {
+      "timestamp": "2026-03-24T10:13:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.052
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 2280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 104.0
+    },
+    {
+      "timestamp": "2026-03-24T10:14:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.052
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 2280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 104.0
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
     },
     {
       "timestamp": "2026-03-24T10:16:00Z",
@@ -225,7 +3363,951 @@
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "metric_name": "payment_fraud_check_latency_p99",
       "labels": {},
-      "value": 120.0
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:16:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:17:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:18:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:19:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:20:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 128.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 152.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.003
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 0.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:21:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:23:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
     },
     {
       "timestamp": "2026-03-24T10:24:00Z",
@@ -236,122 +4318,1398 @@
       "value": 2400.0
     },
     {
-      "timestamp": "2026-03-24T10:16:00Z",
-      "service": "payment-service",
-      "instance": "payment-service-5f8b7c9d4-x7k2m",
-      "metric_name": "payment_latency_p99",
-      "labels": {"endpoint": "/api/pay"},
-      "value": 150.0
-    },
-    {
       "timestamp": "2026-03-24T10:24:00Z",
       "service": "payment-service",
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "metric_name": "payment_latency_p99",
-      "labels": {"endpoint": "/api/pay"},
+      "labels": {
+        "endpoint": "/api/pay"
+      },
       "value": 2600.0
     },
     {
-      "timestamp": "2026-03-24T10:16:00Z",
-      "service": "payment-service",
-      "instance": "payment-service-5f8b7c9d4-x7k2m",
-      "metric_name": "payment_error_rate",
-      "labels": {"endpoint": "/api/pay", "status": "500"},
-      "value": 0.003
-    },
-    {
       "timestamp": "2026-03-24T10:24:00Z",
       "service": "payment-service",
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "metric_name": "payment_error_rate",
-      "labels": {"endpoint": "/api/pay", "status": "500"},
-      "value": 0.12
-    },
-    {
-      "timestamp": "2026-03-24T10:16:00Z",
-      "service": "payment-service",
-      "instance": "payment-service-5f8b7c9d4-x7k2m",
-      "metric_name": "payment_gateway_timeout_count",
-      "labels": {"gateway": "external-payment-gateway"},
-      "value": 1.0
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
     },
     {
       "timestamp": "2026-03-24T10:24:00Z",
       "service": "payment-service",
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "metric_name": "payment_gateway_timeout_count",
-      "labels": {"gateway": "external-payment-gateway"},
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
       "value": 1.0
     },
     {
-      "timestamp": "2026-03-24T11:00:00Z",
-      "service": "inventory-service",
-      "instance": "inventory-service-6d4c8f7b9-l2m5n",
-      "metric_name": "inventory_lock_wait_duration_p99",
-      "labels": {"sku_group": "A"},
-      "value": 15.0
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
     },
     {
-      "timestamp": "2026-03-24T11:02:00Z",
-      "service": "inventory-service",
-      "instance": "inventory-service-6d4c8f7b9-l2m5n",
-      "metric_name": "inventory_lock_wait_duration_p99",
-      "labels": {"sku_group": "A"},
-      "value": 1800.0
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
     },
     {
-      "timestamp": "2026-03-24T11:04:00Z",
-      "service": "inventory-service",
-      "instance": "inventory-service-6d4c8f7b9-l2m5n",
-      "metric_name": "inventory_lock_wait_duration_p99",
-      "labels": {"sku_group": "A"},
-      "value": 4200.0
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
     },
     {
-      "timestamp": "2026-03-24T11:00:00Z",
-      "service": "inventory-service",
-      "instance": "inventory-service-6d4c8f7b9-l2m5n",
-      "metric_name": "inventory_error_rate",
-      "labels": {"endpoint": "/api/inventory/lock"},
+      "timestamp": "2026-03-24T10:24:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:26:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.99
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.091
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 4520.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.068
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 5280.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:27:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.41
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.007
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 236.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
       "value": 0.002
     },
     {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 205.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:28:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.41
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.007
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 236.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 205.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:29:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_db_connection_pool_usage",
+      "labels": {
+        "instance": "order-service-7c9f4d8b5-hxz2q"
+      },
+      "value": 0.41
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_qps",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 612.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_error_rate",
+      "labels": {
+        "endpoint": "/api/orders",
+        "status": "500"
+      },
+      "value": 0.007
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "metric_name": "order_request_latency_p99",
+      "labels": {
+        "endpoint": "/api/orders"
+      },
+      "value": 236.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_upstream_error_rate",
+      "labels": {
+        "upstream_service": "order-service",
+        "status": "503"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "metric_name": "gateway_request_latency_p99",
+      "labels": {
+        "route": "/api/orders"
+      },
+      "value": 205.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_latency_p99",
+      "labels": {
+        "endpoint": "/api/cart"
+      },
+      "value": 92.0
+    },
+    {
+      "timestamp": "2026-03-24T10:30:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "metric_name": "cart_redis_latency_p99",
+      "labels": {},
+      "value": 8.0
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_fraud_check_latency_p99",
+      "labels": {},
+      "value": 2400.0
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_latency_p99",
+      "labels": {
+        "endpoint": "/api/pay"
+      },
+      "value": 2600.0
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_error_rate",
+      "labels": {
+        "endpoint": "/api/pay",
+        "status": "500"
+      },
+      "value": 0.122
+    },
+    {
+      "timestamp": "2026-03-24T10:31:00Z",
+      "service": "payment-service",
+      "instance": "payment-service-5f8b7c9d4-x7k2m",
+      "metric_name": "payment_gateway_timeout_count",
+      "labels": {
+        "gateway": "external-payment-gateway"
+      },
+      "value": 1.0
+    },
+    {
+      "timestamp": "2026-03-24T10:50:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:50:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:51:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:51:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:52:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:52:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:53:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:53:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:54:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:54:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:55:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:55:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:56:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:56:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:57:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 16.0
+    },
+    {
+      "timestamp": "2026-03-24T10:57:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.002
+    },
+    {
+      "timestamp": "2026-03-24T10:58:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 1820.0
+    },
+    {
+      "timestamp": "2026-03-24T10:58:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.048
+    },
+    {
+      "timestamp": "2026-03-24T10:59:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 1820.0
+    },
+    {
+      "timestamp": "2026-03-24T10:59:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.048
+    },
+    {
+      "timestamp": "2026-03-24T11:00:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 1820.0
+    },
+    {
+      "timestamp": "2026-03-24T11:00:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.048
+    },
+    {
+      "timestamp": "2026-03-24T11:01:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 1820.0
+    },
+    {
+      "timestamp": "2026-03-24T11:01:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.048
+    },
+    {
+      "timestamp": "2026-03-24T11:02:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
       "timestamp": "2026-03-24T11:02:00Z",
       "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
       "metric_name": "inventory_error_rate",
-      "labels": {"endpoint": "/api/inventory/lock"},
-      "value": 0.05
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:03:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:03:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:04:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
     },
     {
       "timestamp": "2026-03-24T11:04:00Z",
       "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
       "metric_name": "inventory_error_rate",
-      "labels": {"endpoint": "/api/inventory/lock"},
-      "value": 0.09
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:05:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:05:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:06:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:06:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:07:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:07:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:08:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:08:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:09:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:09:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
+    },
+    {
+      "timestamp": "2026-03-24T11:10:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_lock_wait_duration_p99",
+      "labels": {
+        "sku_group": "A"
+      },
+      "value": 4200.0
+    },
+    {
+      "timestamp": "2026-03-24T11:10:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-service-6d4c8f7b9-l2m5n",
+      "metric_name": "inventory_error_rate",
+      "labels": {
+        "endpoint": "/api/inventory/lock"
+      },
+      "value": 0.092
     }
   ],
   "changes": [
+    {
+      "timestamp": "2026-03-24T08:40:00Z",
+      "service": "auth-service",
+      "instance": "identity-provider",
+      "change_type": "config_change",
+      "summary": "identity-provider 轮换 JWK 签名密钥",
+      "details": {
+        "operation": "jwk_rotation",
+        "kid": "rsa-2026-03",
+        "operator": "sec-team"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T08:55:00Z",
+      "service": "kafka-cluster",
+      "instance": "kafka-cluster",
+      "change_type": "config_change",
+      "summary": "kafka-cluster 调整 replica.fetch.max.bytes",
+      "details": {
+        "configKey": "replica.fetch.max.bytes",
+        "fromValue": "1048576",
+        "toValue": "2097152",
+        "operator": "sre-dan"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:00:00Z",
+      "service": "internal-dns",
+      "instance": "internal-dns",
+      "change_type": "infra_change",
+      "summary": "internal-dns 升级 CoreDNS 1.9.3 → 1.10.1",
+      "details": {
+        "fromVersion": "1.9.3",
+        "toVersion": "1.10.1",
+        "operator": "sre-charlie"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:05:00Z",
+      "service": "order-event-consumer",
+      "instance": "order-event-consumer-8c9d0e1f2-ab3cd",
+      "change_type": "deployment",
+      "summary": "order-event-consumer v2.2.0 发布：订单事件新增 order_tag 字段解析",
+      "details": {
+        "version": "v2.2.0",
+        "operator": "ci-bot",
+        "risk": "medium"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:10:00Z",
+      "service": "promotion-service",
+      "instance": "promotion-service-0a1b2c3d4-ij5kl",
+      "change_type": "deployment",
+      "summary": "promotion-service v3.4.0 发布：新增组合促销规则包",
+      "details": {
+        "version": "v3.4.0",
+        "operator": "ci-bot",
+        "risk": "medium"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:15:00Z",
+      "service": "product-search-service",
+      "instance": "product-search-service-7d8e9f0a1-xk2mn",
+      "change_type": "deployment",
+      "summary": "product-search-service v1.6.0 发布：新增查询长度限制校验",
+      "details": {
+        "version": "v1.6.0",
+        "operator": "ci-bot",
+        "risk": "low"
+      }
+    },
     {
       "timestamp": "2026-03-24T09:20:00Z",
       "service": "order-service",
       "instance": "order-service-7c9f4d8b5-hxz2q",
       "change_type": "deployment",
-      "summary": "order-service v4.1.2 发布：优化订单查询 SQL，未调整连接池",
-      "details": {"version": "v4.1.2", "operator": "ci-bot"}
+      "summary": "order-service v4.1.2 发布：订单详情查询改为多表 join，新增 order_tag 字段读取",
+      "details": {
+        "version": "v4.1.2",
+        "commit": "9f2ab41",
+        "operator": "ci-bot",
+        "risk": "medium"
+      }
     },
     {
-      "timestamp": "2026-03-24T10:06:00Z",
-      "service": "order-service",
-      "instance": "order-service-7c9f4d8b5-hxz2q",
-      "change_type": "config_change",
-      "summary": "order-service 配置变更：spring.datasource.hikari.maximumPoolSize 由 100 调整为 20",
+      "timestamp": "2026-03-24T09:20:00Z",
+      "service": "product-search-service",
+      "instance": "elasticsearch-cluster",
+      "change_type": "infra_change",
+      "summary": "elasticsearch-cluster 调整 search 线程池队列上限 1000 → 400",
       "details": {
-        "configKey": "spring.datasource.hikari.maximumPoolSize",
-        "fromValue": "100",
-        "toValue": "20",
-        "operator": "dba-bob"
+        "configKey": "thread_pool.search.queue_size",
+        "fromValue": "1000",
+        "toValue": "400",
+        "operator": "sre-amy"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:25:00Z",
+      "service": "cart-service",
+      "instance": "cart-redis",
+      "change_type": "config_change",
+      "summary": "cart-redis 调整 maxmemory-policy 与 big key 阈值",
+      "details": {
+        "configKey": "maxmemory-policy",
+        "fromValue": "volatile-lru",
+        "toValue": "allkeys-lru",
+        "operator": "sre-dan"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:30:00Z",
+      "service": "auth-service",
+      "instance": "auth-service-5f8c7d6b9-zt7qp",
+      "change_type": "config_change",
+      "summary": "auth-service token 缓存 TTL 5m → 10m",
+      "details": {
+        "configKey": "token.cache.ttl",
+        "fromValue": "5m",
+        "toValue": "10m",
+        "operator": "alice"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:30:00Z",
+      "service": "redis-session",
+      "instance": "redis-session",
+      "change_type": "config_change",
+      "summary": "redis-session maxclients 10000 → 20000",
+      "details": {
+        "configKey": "maxclients",
+        "fromValue": "10000",
+        "toValue": "20000",
+        "operator": "sre-dan"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:35:00Z",
+      "service": "order-db",
+      "instance": "mysql-order",
+      "change_type": "infra_change",
+      "summary": "mysql-order 索引变更：orders 表新增复合索引 (user_id, created_at)",
+      "details": {
+        "ddl": "CREATE INDEX ix_orders_user_created ON orders(user_id, created_at)",
+        "operator": "dba-bob",
+        "risk": "high"
       }
     },
     {
@@ -359,7 +5717,7 @@
       "service": "payment-service",
       "instance": "payment-service-5f8b7c9d4-x7k2m",
       "change_type": "config_change",
-      "summary": "payment-service 日志采样率由 1.0 调整为 0.5（仅影响日志采集，和故障无关）",
+      "summary": "payment-service 日志采样率调整：logging.sampleRate 1.0 → 0.5",
       "details": {
         "configKey": "logging.sampleRate",
         "fromValue": "1.0",
@@ -368,15 +5726,117 @@
       }
     },
     {
-      "timestamp": "2026-03-24T10:08:00Z",
+      "timestamp": "2026-03-24T09:45:00Z",
+      "service": "fulfillment-service",
+      "instance": "fulfillment-service-9e0f1a2b3-ef4gh",
+      "change_type": "deployment",
+      "summary": "fulfillment-service v1.9.1 发布：承运商客户端支持 Retry-After",
+      "details": {
+        "version": "v1.9.1",
+        "operator": "ci-bot",
+        "risk": "low"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:50:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "change_type": "traffic_switch",
+      "summary": "order-service 灰度放量 10% → 30%",
+      "details": {
+        "fromPercent": "10",
+        "toPercent": "30",
+        "operator": "sre-dan"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T09:55:00Z",
+      "service": "api-gateway",
+      "instance": "api-gateway-6f9c8d7b5-wq3zx",
+      "change_type": "config_change",
+      "summary": "api-gateway 路由超时调整：checkout 路由 readTimeout 5s → 3s",
+      "details": {
+        "configKey": "routes.checkout.readTimeout",
+        "fromValue": "5000",
+        "toValue": "3000",
+        "operator": "sre-charlie"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:03:00Z",
+      "service": "cart-service",
+      "instance": "cart-service-6b7d9c4f8-pp2kd",
+      "change_type": "traffic_switch",
+      "summary": "cart-service 灰度切流 10% → 50%",
+      "details": {
+        "fromPercent": "10",
+        "toPercent": "50",
+        "operator": "sre-dan"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:06:00Z",
+      "service": "order-service",
+      "instance": "order-service-7c9f4d8b5-hxz2q",
+      "change_type": "config_change",
+      "summary": "order-service 数据源配置变更：spring.datasource.hikari.maximumPoolSize 100 → 20",
+      "details": {
+        "configKey": "spring.datasource.hikari.maximumPoolSize",
+        "fromValue": "100",
+        "toValue": "20",
+        "operator": "dba-bob",
+        "risk": "high"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:12:00Z",
+      "service": "promotion-service",
+      "instance": "promotion-service-0a1b2c3d4-ij5kl",
+      "change_type": "config_change",
+      "summary": "promotion-service 容器 CPU limit 1 → 2",
+      "details": {
+        "configKey": "resources.limits.cpu",
+        "fromValue": "1",
+        "toValue": "2",
+        "operator": "sre-charlie"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:15:00Z",
+      "service": "order-event-consumer",
+      "instance": "kafka-cluster",
+      "change_type": "config_change",
+      "summary": "order-events topic 分区数 6 → 12",
+      "details": {
+        "configKey": "num.partitions",
+        "fromValue": "6",
+        "toValue": "12",
+        "operator": "sre-dan"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:22:00Z",
       "service": "fraud-detection-service",
       "instance": "fraud-detection-service-6d8c5b7f9-r4w1s",
       "change_type": "deployment",
-      "summary": "fraud-detection-service 发布 v2.7.0：新增多层风控规则链，检查路径变长",
+      "summary": "fraud-detection-service v2.7.0 发布：风控规则链新增 ml_v3 模型，检查路径变长",
       "details": {
         "version": "v2.7.0",
         "ruleChain": "device+behavior+ml_v3",
-        "operator": "ci-bot"
+        "operator": "ci-bot",
+        "risk": "high"
+      }
+    },
+    {
+      "timestamp": "2026-03-24T10:25:00Z",
+      "service": "fulfillment-service",
+      "instance": "primary-carrier-api",
+      "change_type": "infra_change",
+      "summary": "primary-carrier-api 供应商维护窗口开始，返回 503",
+      "details": {
+        "window": "10:25-11:05",
+        "operator": "vendor",
+        "risk": "medium"
       }
     },
     {
@@ -384,16 +5844,26 @@
       "service": "inventory-service",
       "instance": "inventory-service-6d4c8f7b9-l2m5n",
       "change_type": "deployment",
-      "summary": "inventory-service 发布 v3.0.0：重构库存锁实现（细粒度分段锁）",
-      "details": {"version": "v3.0.0", "change": "库存锁实现重构", "operator": "ci-bot"}
+      "summary": "inventory-service v3.0.0 发布：库存锁由全局锁改为细粒度分段锁",
+      "details": {
+        "version": "v3.0.0",
+        "change": "segmented lock refactor",
+        "operator": "ci-bot",
+        "risk": "high"
+      }
     },
     {
-      "timestamp": "2026-03-24T10:22:00Z",
-      "service": "cart-service",
-      "instance": "cart-service-6b7d9c4f8-pp2kd",
-      "change_type": "traffic_switch",
-      "summary": "cart-service 灰度切流 10% → 50%（与库存锁问题无关）",
-      "details": {"fromPercent": "10", "toPercent": "50", "operator": "sre-dan"}
+      "timestamp": "2026-03-24T10:52:00Z",
+      "service": "inventory-service",
+      "instance": "inventory-mysql",
+      "change_type": "config_change",
+      "summary": "inventory-mysql 参数变更：innodb_lock_wait_timeout 50 → 30",
+      "details": {
+        "configKey": "innodb_lock_wait_timeout",
+        "fromValue": "50",
+        "toValue": "30",
+        "operator": "dba-bob"
+      }
     }
   ]
 }
