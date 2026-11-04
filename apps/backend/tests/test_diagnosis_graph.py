@@ -344,6 +344,16 @@ async def test_graph_collects_evidence_then_confirms_root_cause(migrated_url: st
         audits = list(await session.scalars(select(AgentToolCallAuditModel)))
     assert [audit.status for audit in audits] == ["completed", "completed", "completed"]
 
+    async with session_factory() as session:
+        revise_steps = list(
+            await session.scalars(
+                select(DiagnosticStepModel).where(
+                    DiagnosticStepModel.phase == "revise_hypotheses"
+                )
+            )
+        )
+    assert [step.payload for step in revise_steps] == [{"new": 2, "revised": 0}]
+
     events = await _events(harness.jobs, "job-graph")
     assert events[-1]["type"] == "complete"
     assert [event["type"] for event in events][-3:] == ["report", "task.status", "complete"]

@@ -1005,7 +1005,7 @@ class _Run:
             node="revise_hypotheses",
             operation_id=operation_id,
             phase="revise_hypotheses",
-            payload={"new": applied_new, "revised": applied_revised},
+            payload={"new": len(applied_new), "revised": len(applied_revised)},
             events=[
                 _task_status_event(
                     self._scope.task_id,
