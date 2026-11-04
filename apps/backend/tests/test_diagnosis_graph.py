@@ -26,6 +26,8 @@ from super_ai.memory.models import (
     DiagnosticEvidenceModel,
     DiagnosticReportModel,
     DiagnosticStepModel,
+    DiagnosticTaskModel,
+    GraphCheckpointModel,
     ReportEvidenceLinkModel,
 )
 from super_ai.memory.repositories import BackgroundJobRepository, MemoryRepositories
@@ -494,6 +496,89 @@ async def test_finalizer_commits_cancelled_terminal_without_model_calls(
             item.sequence for item in await session.scalars(select(BackgroundJobEventModel))
         ]
     assert sequences == sorted(sequences)
+
+
+@pytest.mark.asyncio
+async def test_retry_lands_a_terminal_when_finalize_cannot_recommit(
+    migrated_url: str,
+) -> None:
+    harness = await _harness(migrated_url, _script())
+    await harness.service.run(harness.context)
+
+    # Reproduce a lease loss right after the finalize commit: the stored checkpoint
+    # still points at finalize, no terminal was written and the task is not durable.
+    # A retry used to re-enter finalize, conflict on its fixed operation id, fail to
+    # persist a terminal, and then be retried forever.
+    async with harness.sessions() as session, session.begin():
+        terminal = await session.scalar(
+            select(GraphCheckpointModel).where(
+                GraphCheckpointModel.task_id == "task-graph",
+                GraphCheckpointModel.checkpoint_id == "finish:finish:final",
+            )
+        )
+        assert terminal is not None
+        await session.delete(terminal)
+        for link in list(
+            await session.scalars(
+                select(ReportEvidenceLinkModel).where(
+                    ReportEvidenceLinkModel.task_id == "task-graph"
+                )
+            )
+        ):
+            await session.delete(link)
+        for report in list(
+            await session.scalars(
+                select(DiagnosticReportModel).where(
+                    DiagnosticReportModel.task_id == "task-graph"
+                )
+            )
+        ):
+            await session.delete(report)
+        stored_task = await session.get(DiagnosticTaskModel, "task-graph")
+        assert stored_task is not None
+        stored_task.status = "running"
+        stored_task.completed_at = None
+        stored_job = await session.get(BackgroundJobModel, "job-graph")
+        assert stored_job is not None
+        stored_job.status = "running"
+        stored_job.completed_at = None
+        stored_job.lease_owner = harness.context.job.lease_owner
+        stored_job.lease_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+        checkpoint = await session.scalar(
+            select(GraphCheckpointModel).where(
+                GraphCheckpointModel.task_id == "task-graph",
+                GraphCheckpointModel.checkpoint_id == "current",
+            )
+        )
+        assert checkpoint is not None
+        payload = dict(checkpoint.checkpoint_payload)
+        runtime = dict(cast(dict[str, object], payload["runtime"]))
+        runtime["next_node"] = "finalize"
+        payload["runtime"] = runtime
+        checkpoint.checkpoint_payload = payload
+
+    await harness.service.run(harness.context)
+
+    task = await harness.repositories.diagnostics.get_task(
+        owner_user_id=OWNER, task_id="task-graph"
+    )
+    assert task is not None and task.status == "succeeded"
+    conclusion = cast(
+        dict[str, object],
+        cast(dict[str, object], task.result_payload["diagnosis"])["incident_conclusion"],
+    )
+    assert conclusion["conclusion_status"] == "confirmed"
+    assert conclusion["stop_reason"] == "root_cause_confirmed"
+    job = await harness.jobs.get(owner_user_id=OWNER, job_id="job-graph")
+    assert job is not None and job.status == "succeeded"
+    async with harness.sessions() as session:
+        restored = await session.scalar(
+            select(GraphCheckpointModel).where(
+                GraphCheckpointModel.task_id == "task-graph",
+                GraphCheckpointModel.checkpoint_id == "finish:finish:final",
+            )
+        )
+    assert restored is not None
 
 
 @pytest.mark.asyncio

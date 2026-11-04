@@ -1581,6 +1581,12 @@ class _Run:
             working["hypotheses"] = [item.model_dump(mode="json") for item in hypotheses]
             if status != "cancelled":
                 conclusion = self._conclusion()
+                if conclusion is not None and conclusion.conclusion_status == "confirmed":
+                    # A confirmed root cause outranks a later failure: clearing its stop
+                    # reason would make the conclusion unpersistable, so the terminal could
+                    # never be committed and the job would be retried forever.
+                    status = "succeeded"
+                    stop_reason = "root_cause_confirmed"
                 if conclusion is None:
                     conclusion = IncidentConclusion(
                         conclusion_status="unconfirmed",
@@ -1749,9 +1755,11 @@ class _Run:
         )
         phase_note = (
             "当前是最后分析：next_step.action 必须是 finalize 且 requests 为空。"
+            "此时若不满足确认门槛，conclusion_status 必须为 unconfirmed，并用"
+            "budget_exhausted 或 critical_data_unavailable 说明停止原因。"
             if final_analysis
-            else "如需更多事实选择 build_queries；只需调整解释选择 revise_hypotheses；"
-            "结束选择 finalize。"
+            else "按下方【继续调查的边界】在 build_queries、revise_hypotheses 与 "
+            "finalize 之间选择。"
         )
         return (
             "你是 AIOps 调查的评估器。只输出 JSON，字段为 hypothesis_assessments、"
@@ -1773,13 +1781,30 @@ class _Run:
             "critical_data_unavailable 说明停止原因。\n"
             "next_step 为 action、reason、requests（每项 hypothesis_ids 与 requirement）。\n"
             f"{phase_note}\n"
-            "确认根因必须同时具备具体原因、对象/时间/机制证据、无关键反证；"
-            "工具成功、单个 supported 或数值评分都不能作为确认依据。\n"
-            "判定竞争解释只看已有证据：只有被现有证据正向支持的其它解释才算主要未决竞争解释；"
-            "仅因工具无法观测而无法排除的内部实现（数据库内核、网络链路、第三方服务内部）"
-            "不构成竞争解释，必须写入 gaps 而不是阻止确认。\n"
-            "当一个解释已有机制证据支持、其它解释都没有任何正向证据时，必须给出 confirmed 与"
-            "具体 root_cause，不得继续停在 unconfirmed。\n"
+            "【确认门槛】只有同时满足以下三点才允许 conclusion_status=confirmed：\n"
+            "1. root_cause 指向具体的触发原因（版本发布、配置变更、依赖或资源变化等），"
+            "而不是只描述现象或机制；例如『连接池耗尽』『锁等待升高』只是现象/机制，不是根因。\n"
+            "2. 从触发原因到现象的因果链每一环都能对应到已有证据里的具体对象与时间，"
+            "而不是推测或常识补全。\n"
+            "3. 已有证据中不存在被正向支持的其它解释（被现有证据支持的竞争解释必须先排除）。\n"
+            "【继续调查的边界】不满足确认门槛时，next_step.action 必须按以下规则选择，"
+            "不得直接 finalize：\n"
+            "- 还缺少可判定触发原因的事实（例如尚未查询变更、上游依赖或其它服务的观测）"
+            "→ 选择 build_queries，并在 requests 中写明要补齐的具体事实。\n"
+            "- 现有假设与已取得证据矛盾、或只解释了现象、需要改写为可检验的解释"
+            "→ 选择 revise_hypotheses。\n"
+            "- 只有满足确认门槛，或预算/时间耗尽，或关键数据不可用（后两种配合对应"
+            " stop_reason）时才允许 finalize。\n"
+            "【禁止事项】\n"
+            "- 不得因为某个解释『看似合理』『机制上说得通』或工具调用成功就确认；\n"
+            "- 不得用单个 supported 状态、数值评分或工具成功代替确认门槛；\n"
+            "- 不得为了让调查尽快结束而确认；\n"
+            "- 只解释了现象/机制、尚未定位触发原因时，不得给出 root_cause_confirmed。\n"
+            "【无法观测的内部实现】数据库内核、网络链路、第三方服务内部等现有工具无法观测的"
+            "内容写入 gaps，本身不构成竞争解释；但触发原因尚未定位时，仍必须按"
+            "【继续调查的边界】继续调查，不能以此为由确认。\n"
+            "【收敛要求】当触发原因已定位、因果链完整且无关键反证时必须给出 confirmed；"
+            "不要重复请求已有证据或相同失败参数，也不要在门槛已满足后继续无意义的查询。\n"
             f"{self._background_hint()}"
             f"当前假设：\n{hypotheses}\n"
             f"已有现场查询与证据：\n{self._evidence_digest()}\n"
