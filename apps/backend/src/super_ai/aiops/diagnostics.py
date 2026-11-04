@@ -57,6 +57,8 @@ from super_ai.aiops.diagnosis_models import (
 from super_ai.aiops.diagnosis_recovery import plan_diagnostic_recovery
 from super_ai.aiops.diagnosis_reporting import ReportFacts, build_diagnosis_report
 from super_ai.aiops.diagnosis_tools import (
+    DEFAULT_LOG_LIMIT,
+    MAX_LOG_LIMIT,
     ClsSearchDefaults,
     DiagnosisToolbox,
     DiagnosisToolError,
@@ -1652,7 +1654,8 @@ class _Run:
             f"可用工具：{json.dumps(names, ensure_ascii=False)}\n"
             f"告警服务：{alert.service or '未知'}；窗口：{window}\n"
             "工具参数契约：\n"
-            f"- {LOG_TOOL}: service, instance?, levels?, from_ms, to_ms, limit\n"
+            f"- {LOG_TOOL}: service, instance?, levels?, from_ms, to_ms, "
+            f"limit（1~{MAX_LOG_LIMIT} 的整数，默认 {DEFAULT_LOG_LIMIT}）\n"
             f"- {METRIC_TOOL}: service, metric_names, from_ms, to_ms, labels?, aggregation?\n"
             f"- {CHANGE_TOOL}: services, from_ms, to_ms, change_type?"
         )

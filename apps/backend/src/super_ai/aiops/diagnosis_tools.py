@@ -43,6 +43,7 @@ MOCK_TOOL_NAMES = frozenset({SearchLog, QueryMetric, QueryChange})
 AGGREGATIONS = frozenset({"avg", "sum", "max", "min", "p99"})
 CHANGE_TYPES = frozenset({"deployment", "config_change", "traffic_switch", "infra_change"})
 DEFAULT_LOG_LIMIT = 50
+MAX_LOG_LIMIT = 100
 LOG_WINDOW_BEFORE_MINUTES = 10
 LOG_WINDOW_AFTER_MINUTES = 5
 
@@ -227,8 +228,14 @@ class MockDiagnosisToolbox:
         levels = _optional_text_list(arguments, "levels", tool_name=SearchLog)
         start, end = _require_ms_window(arguments, tool_name=SearchLog)
         limit = arguments.get("limit", DEFAULT_LOG_LIMIT)
-        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
-            raise ToolCallRejected("SearchLog limit must be an integer between 1 and 100")
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= MAX_LOG_LIMIT
+        ):
+            raise ToolCallRejected(
+                f"SearchLog limit must be an integer between 1 and {MAX_LOG_LIMIT}"
+            )
 
         records: list[JsonValue] = [
             _log_record(log)

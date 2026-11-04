@@ -15,6 +15,7 @@ from alembic.config import Config
 from sqlalchemy import select
 
 from super_ai.aiops.diagnosis_config import DiagnosisConfig
+from super_ai.aiops.diagnosis_tools import DEFAULT_LOG_LIMIT, MAX_LOG_LIMIT
 from super_ai.aiops.diagnostics import AiopsDiagnosticService
 from super_ai.jobs.runtime import BackgroundJobContext
 from super_ai.memory.database import create_memory_engine, create_memory_session_factory
@@ -512,6 +513,18 @@ async def test_query_planner_prompt_exposes_the_fixed_metric_catalog(migrated_ur
     assert plan_prompts
     assert "order_db_connection_pool_usage" in plan_prompts[0]
     assert "只能从这个白名单中选择" in plan_prompts[0]
+
+
+@pytest.mark.asyncio
+async def test_query_planner_prompt_states_the_log_limit_range(migrated_url: str) -> None:
+    """The planner passed limit=200 until the contract carried the accepted range."""
+    harness = await _harness(migrated_url, _script())
+
+    await harness.service.run(harness.context)
+
+    plan_prompts = [prompt for prompt in harness.script.calls if "执行计划器" in prompt]
+    assert plan_prompts
+    assert f"limit（1~{MAX_LOG_LIMIT} 的整数，默认 {DEFAULT_LOG_LIMIT}）" in plan_prompts[0]
 
 
 @pytest.mark.asyncio
