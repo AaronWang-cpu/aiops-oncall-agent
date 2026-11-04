@@ -197,7 +197,7 @@ function durationText(tool: ToolCallAudit): string {
   <section class="aiops-execution" aria-label="诊断执行链">
     <button class="aiops-execution__header" type="button" :aria-expanded="!collapsed" @click="collapsed = !collapsed">
       <GitBranch :size="15" aria-hidden="true" />
-      <span>执行链 · 七节点步骤与工具调用</span>
+      <span>执行链</span>
       <small>{{ executionSteps.length }} 步 / {{ chain?.toolCalls.length ?? 0 }} 次调用</small>
     </button>
 
